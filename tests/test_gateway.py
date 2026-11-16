@@ -142,7 +142,6 @@ class GatewaySecurityTests(unittest.IsolatedAsyncioTestCase):
     async def test_revoked_slow_upload_closes_before_reaching_runtime(self):
         authorized = True
         started = asyncio.Event()
-        release_body = asyncio.Event()
         received = []
 
         async def validate(request):
@@ -170,24 +169,27 @@ class GatewaySecurityTests(unittest.IsolatedAsyncioTestCase):
             app = web.Application()
             app.router.add_post('/tabularis/w/{workspace}/{tail:.*}', self.gateway.handle)
             async with TestServer(app) as server:
-                async def body():
-                    yield b'{'
-                    await release_body.wait()
-                    yield b'}'
-
-                operation = asyncio.create_task(client.post(
-                    server.make_url('/tabularis/w/' + 'a' * 32 + '/query'), data=body()))
+                reader, writer = await asyncio.open_connection(server.host, server.port)
+                writer.write(('POST /tabularis/w/' + 'a' * 32 + '/query HTTP/1.1\r\n'
+                              'Host: panel.example.test\r\nContent-Length: 2\r\n\r\n{').encode())
+                await writer.drain()
                 try:
                     await started.wait()
                     authorized = False
-                    from aiohttp import ServerDisconnectedError
-                    with self.assertRaises(ServerDisconnectedError):
-                        await asyncio.wait_for(operation, timeout=5)
+                    self.assertEqual(await asyncio.wait_for(reader.read(), timeout=5), b'')
                     self.assertEqual(received, [])
+                    # Finishing the old upload after denial must not resurrect the relay.
+                    writer.write(b'}')
+                    try:
+                        await writer.drain()
+                    except ConnectionError:
+                        pass
                 finally:
-                    release_body.set()
-                    operation.cancel()
-                    await asyncio.gather(operation, return_exceptions=True)
+                    writer.close()
+                    try:
+                        await writer.wait_closed()
+                    except ConnectionError:
+                        pass
                     await asyncio.gather(*list(self.gateway.revocations.values()))
                 self.assertEqual(received, [])
 
