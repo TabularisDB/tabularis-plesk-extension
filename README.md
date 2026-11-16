@@ -15,7 +15,7 @@ python3 scripts/package.py
 plesk bin extension --install /path/to/tabularis-0.1.0.zip
 ```
 
-Installation does not fetch an arbitrary latest binary or overwrite operator configuration. The runtime and its SHA-256 must be supplied explicitly. Uninstalling the extension stops its own services and retains state and extension-created database users for deliberate cleanup; application databases and users are never deleted.
+Installation does not fetch an arbitrary latest binary or overwrite operator configuration. The runtime and its SHA-256 must be supplied explicitly. Stopping the broker revokes temporary database accounts. Uninstalling the extension stops its own services and retains configuration and failed-cleanup journals for operator review; application databases and users are never deleted.
 
 See [runtime installation](docs/runtime.md), [architecture and security](docs/architecture.md), and [observed validation and limitations](docs/validation.md).
 

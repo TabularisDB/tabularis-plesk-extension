@@ -20,7 +20,7 @@ The panel web server includes two extension-owned configuration files: `tabulari
 
 ## Provisioning contract
 
-The evaluation runtime is pinned to core commit `9edec8dd4fcd1ac66991f8fd7b1e4badd98e413b` ([PR #1576](https://github.com/TabularisDB/tabularis/pull/1576)), including runtime base paths from #1575 and mandatory proxy credentials on every protected request.
+The evaluation runtime is pinned to core commit `0d2a6a098f8369653b918d1e78d7f4eeeac65d8a` ([PR #1579](https://github.com/TabularisDB/tabularis/pull/1579)), including runtime base paths from #1575, mandatory proxy credentials on every protected request from #1576, provisioning hardening from #1578 and browser-only community welcome dismissal from #1579. The verified binary SHA-256 is `4f9cd68bfeeaa0dab0c293760c1e7a812528aa9c23f0c0e2c2489506b93d109a`. All prerequisite PRs remain unmerged during evaluation.
 
 The provisioning contract is pinned to core [PR #1574](https://github.com/TabularisDB/tabularis/pull/1574), commit `6cbca5bcd583c4cc591880b087a3a624d103321e`, stacked on #1573 and #1528. Provisioning requests preserve the configured public Host and never send an Origin header.
 

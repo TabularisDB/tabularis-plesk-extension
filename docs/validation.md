@@ -19,10 +19,12 @@ Observed on the official `plesk/plesk` Linux container, Plesk 18.0.82.3 / Ubuntu
 | MariaDB `psa` and `mysql` databases | Denied |
 | MariaDB cleanup | Generated account removed; an existing SLEEP(15) query terminated within 0.3 seconds |
 | Application passwords | Unchanged in the tested provisioning paths |
-| Python security/protocol tests | Pass, including a live WebSocket closed despite blocked cleanup, a replaced runtime port receiving zero secret bytes, and two panel sessions isolated from callback Set-Cookie |
+| Python/PHP security/protocol suite | 21 tests: 20 pass locally; the root-only cross-UID test passes against the installed extension in Plesk. Includes blocked-cleanup stream cancellation, replaced ports receiving zero secret bytes, callback cookie isolation and authorized native card links |
 | PHP syntax and deterministic packaging | Pass |
 
 The real public Plesk gateway starts the pinned core runtime and loads both editors. PostgreSQL browses 5 tables and 2 views; MariaDB browses 4 tables and 1 view. Both execute SELECT/UPDATE, create a table inside an existing schema/database, insert generated identity/auto-increment values, drop their own test table and survive a direct editor URL refresh. Local MariaDB requires an explicit disabled-TLS setting because the bundled server has no TLS; this is allowed only for a literal loopback address, while remote MySQL requires verified TLS identity. No fake runtime is substituted for these checks.
+
+Both native card actions were clicked in the actual panel and opened the matching `provisioned-plesk-db-1` PostgreSQL or `provisioned-plesk-db-2` MariaDB editor.
 
 The extension page was checked at 390 × 844 pixels: a single panel heading, no horizontal overflow and both launch buttons visible. Native database cards receive an authorized per-database action through `pm_Hook_SimpleList`. Plesk 18.0.82 renders extension actions in the expanded card; its compact ellipsis only exposes hard-coded built-in actions and has no supported extension insertion point. The launch URL is not an access grant: the gateway independently checks the live Plesk session and selected database.
 
