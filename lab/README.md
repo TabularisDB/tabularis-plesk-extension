@@ -4,6 +4,9 @@ This lab runs the official Plesk development image on Linux and provisions a
 customer, a domain, MariaDB and PostgreSQL databases, and two additional Plesk
 users. It never installs Plesk on the Docker host or changes existing containers.
 
+See [the validation report](VALIDATION.md) for pinned runtime revisions, real
+browser results, authorization checks and explicit coverage limits.
+
 The pinned image was tested on November 16, 2026:
 
 | Component | Tested version |
