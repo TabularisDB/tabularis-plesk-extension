@@ -15,4 +15,6 @@ plesk bin extension --install /path/to/tabularis-0.1.0.zip
 
 Installation does not fetch an arbitrary latest binary or overwrite operator configuration. The runtime and its SHA-256 must be supplied explicitly. Uninstalling the extension stops its own services and retains state and extension-created database users for deliberate cleanup; application databases and users are never deleted.
 
+See [runtime installation](docs/runtime.md), [architecture and security](docs/architecture.md), and [observed validation and limitations](docs/validation.md).
+
 See [the open implementation issues](https://github.com/TabularisDB/tabularis-plesk-extension/issues) and the [Apache 2.0 license](LICENSE).

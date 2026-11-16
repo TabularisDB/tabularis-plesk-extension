@@ -1,0 +1,44 @@
+# Security and runtime architecture
+
+Plesk remains the identity and database catalogue authority. Browser-controlled database IDs only select from that verified catalogue. A launch link never authorizes subsequent requests.
+
+1. The native page obtains the effective Plesk user, checks owner and subscription scope and the `databasesManagement` site permission, and shows only active MySQL/MariaDB and PostgreSQL databases.
+2. The panel HTTPS server proxies `/tabularis/` to an unprivileged Python gateway over a Unix socket.
+3. For every HTTP request, the gateway sends the current panel cookie to a private Unix-only panel callback. The callback preserves the original client IP, authenticates through the actual Plesk session and returns a 10-second HMAC-signed catalogue. The signature key is accessible only to root and the panel service. Browser requests to the callback need a separate private callback key.
+4. The root broker accepts only the gateway Unix UID (`SO_PEERCRED`) and verifies the signed assertion. It hashes effective identity, impersonating actor, panel session and the full authorized catalogue into a workspace ID. Each session therefore has its own runtime, state directory, Unix UID, proxy secret and provisioning token. Different rights always produce different workspaces.
+5. The broker rechecks live database metadata and provisions dedicated extension-owned database accounts. It starts the pinned Tabularis binary as a new unprivileged UID with no supplementary groups or privilege escalation. It verifies ownership of the loopback listener before sending any provisioning token, then uses the server-to-server provisioning API.
+6. Only a successfully reconciled runtime receives browser traffic. Browser-supplied authentication and forwarding headers are removed. Panel cookies never reach Tabularis, and provisioning endpoints are blocked at the gateway.
+
+The core runtime must require the proxy secret on **every** proxy-mode request, even when a valid Tabularis cookie exists. Loopback binding alone does not protect a multi-user hosting server. The gateway additionally verifies the current panel session before accepting a Tabularis cookie.
+
+The gateway rejects foreign origins, cross-site requests and unsafe requests without the configured origin. Tabularis performs its own CSRF checks. Runtime cookies must use their workspace base path. There are no credentials in launch URLs and no one-use token to leak through a referrer.
+
+## Revocation and lifecycle
+
+The gateway rechecks established WebSockets and in-progress HTTP requests every two seconds, including queries that have not returned their first response byte. Failed reauthorization closes the stream and asks the broker to terminate that previously authorized runtime. The bound is two seconds plus the panel callback's maximum 15-second timeout and scheduling delay; a database transaction already committed cannot be undone.
+
+Fresh requests always re-evaluate the source of truth; lifecycle events are not required for correctness. A changed catalogue or identity makes the previous workspace URL invalid. Idle runtimes stop after 15 minutes. Active streams renew activity. A runtime stop terminates its process group, revokes its generated database accounts, removes secret-bearing runtime files and releases the Unix account. Failed SQL-account cleanup is retained in a root-only journal for retry at broker startup. Administrative uninstall retains journals and configuration, while application data remains intact.
+
+There is no persistent query-history promise across sessions: workspace history is deliberately ephemeral. Administrators can configure the concurrent runtime cap (default eight). Each runtime has file-descriptor, process, maximum-file-size and virtual-address-space limits; these are not a substitute for host capacity planning. The gateway has its own systemd memory limit.
+
+## Database credentials
+
+The root-only PHP helper uses the installed Plesk CLI with a password passed in `PSA_PASSWORD`, never a command-line argument. Existing application passwords are untouched. Generated users have a `tab_` prefix followed by 24 random hexadecimal characters. A username is recorded in a root-only journal before provisioning starts, so failures retain cleanup ownership.
+
+MySQL/MariaDB uses Plesk's database-specific user grants. Local users receive a loopback-only access list. Remote MySQL servers registered in Plesk use their configured endpoint; this path needs separate deployment-specific TLS and firewall validation.
+
+PostgreSQL receives schema usage/create, existing table privileges, sequence privileges and default privileges for existing object owners and Plesk-managed application roles. This permits metadata reads, existing-table DML, sequences, and creation of new objects. ALTER/DROP of another role's objects remains an ownership operation and is intentionally not granted through owner-role membership. New schemas or newly introduced non-Plesk creator roles require a fresh workspace so grants can be recomputed.
+
+PostgreSQL's default PUBLIC CONNECT means a database-specific role grant alone does not prevent connections to other databases. The local PostgreSQL adapter therefore adds a narrowly targeted HBA block **before** enabling the generated login: its database is permitted on loopback, every other database/address is rejected for that role. Unrelated HBA rules and application passwords remain unchanged. It validates the complete HBA file before reload and restores the original on errors. Cleanup disables login, terminates that role's sessions, reassigns its created objects to an isolated retained NOLOGIN owner role with no global privileges or memberships, removes its grants/default privileges and drops only that generated role and its HBA block.
+
+Retained object-owner roles are intentionally kept: promoting user-created executable objects to an existing database owner could promote a SECURITY DEFINER function to superuser privileges. The cleanup test verifies that a function cannot read a protected administrator table before or after transfer. Retained roles have no password, login, inherited privileges, memberships, superuser, database-creation, role-creation, replication or row-security-bypass rights.
+
+Remote PostgreSQL fails closed: safely installing its login guard requires an operator-controlled adapter on the remote database host. This version does not claim remote PostgreSQL support. PostgreSQL administrator credentials are only used in memory by the root helper and never enter a Tabularis workspace.
+
+## Plesk compatibility boundary
+
+The page, lifecycle scripts, navigation, session client and DB adapter use the native extension SDK. Database-only subusers require more precise checks than `pm_Client::hasAccessToDomain`, which also requires website-management permissions in the tested Plesk version. The adapter therefore additionally uses `Session::get()->auth()->getUserRow()` and `checkUserPermissionForSite('databasesManagement', ...)`, plus explicit owner/subscription checks. These are internal Plesk APIs, tested on 18.0.82. An unavailable API or ambiguous identity fails closed.
+
+The catalogue reads Plesk's `data_bases`, `domains`, `clients` and `DatabaseServers` metadata through `pm_Bootstrap::getDbAdapter`. It never retrieves database application passwords. Plesk database-schema compatibility must be rechecked for future releases.
+
+Primary references: [Plesk session SDK](https://plesk.github.io/pm-api-stubs/docs/classes/pm-Session.html), [Plesk client permissions](https://plesk.github.io/pm-api-stubs/docs/classes/pm-Client.html), [Plesk CLI SDK](https://plesk.github.io/pm-api-stubs/docs/classes/pm-ApiCli.html), [official custom-button example](https://github.com/plesk/ext-custom-buttons).
