@@ -131,6 +131,7 @@ def seed_databases(values):
     ):
         if panel_query(f"SELECT count(*) FROM data_bases WHERE name='{name}'") == "0":
             plesk(["database", "--create", name, "-domain", DOMAIN, "-type", driver])
+        plesk(["database", "--assign-to-domain", name, "-domain", DOMAIN, "-type", driver, "-server", server])
         if panel_query(f"SELECT count(*) FROM db_users WHERE login='{owner}'") == "0":
             plesk(["database", "--create-dbuser", owner, "-passwd", "", "-domain", DOMAIN, "-server", server, "-database", name], password=values[secret])
         if driver == "postgresql":

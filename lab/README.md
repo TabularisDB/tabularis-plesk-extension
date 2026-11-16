@@ -184,6 +184,20 @@ Cookies are saved only in protected local state files. The role is restored in a
 self-signed lab endpoint. A public HTTPS origin can be tested with
 `--origin https://panel.example.com`; its certificate is verified normally.
 
+After those public-origin session checks, exercise the running gateway with
+Python's `aiohttp` dependency installed:
+
+```sh
+python3 lab/verify_runtime.py --origin https://panel.example.com
+```
+
+This opens a permitted subuser workspace, rejects the same URL when used by the
+customer, denied subuser or anonymous browser, then revokes the live role. An
+already established WebSocket must close through its own periodic authorization
+check without a subsequent HTTP request triggering reconciliation. HTTP access
+must also be denied. The role is restored in a `finally` block; application
+passwords and database contents are unchanged.
+
 ## Findings from the first real run
 
 - The SDK autoloads `Modules_Tabularis_Catalog` from `plib/library/Catalog.php`.
@@ -208,6 +222,9 @@ self-signed lab endpoint. A public HTTPS origin can be tested with
   to ownership rules. The helper does not grant application-owner membership or
   superuser rights. Remote PostgreSQL requires a separate guarded adapter and
   fails closed without one.
+- New PostgreSQL objects can be created in an existing authorized schema. The
+  generated login cannot create a new schema because it has no database-level
+  `CREATE` privilege.
 - MariaDB's scoped account read and wrote its fixture database and was denied
   access to `psa` and `mysql`.
 
