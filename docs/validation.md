@@ -8,6 +8,7 @@ Observed on the official `plesk/plesk` Linux container, Plesk 18.0.82.3 / Ubuntu
 | Native extension page for admin, customer, DB-only subuser, denied subuser | Renders through actual Plesk session |
 | Effective database catalogue | Admin/customer/allowed subuser see both sample databases; denied subuser sees none |
 | Role revocation using the same browser cookie | Catalogue immediately becomes empty; restoring role restores permitted databases |
+| Private Unix callback | Allowed sessions receive valid signed catalogues; denied role gets 403; wrong original client IP yields no grant |
 | Distinct effective identities | Admin, customer and both subusers have distinct identities |
 | PostgreSQL existing tables, write, sequence | Dedicated account succeeds |
 | PostgreSQL future owner-created table/sequence | Default privileges work |

@@ -2,6 +2,7 @@
 """Configure a previously installed Plesk extension with a verified local runtime."""
 import argparse
 import hashlib
+import grp
 import json
 import os
 from pathlib import Path
@@ -57,6 +58,10 @@ def main():
     if not 1 <= args.max_workspaces <= 64:
         parser.error('--max-workspaces must be between 1 and 64')
     binary, web_root = root_owned(args.binary), root_owned(args.web_root)
+    for asset in web_root.rglob('*'):
+        if asset.is_symlink():
+            parser.error('The Web UI build must not contain symlinks')
+        root_owned(asset)
     if hashlib.sha256(binary.read_bytes()).hexdigest() != args.sha256.lower():
         parser.error('The runtime SHA-256 does not match')
     if not (web_root / 'index.html').is_file() or not (MODULE / 'broker').is_dir():
@@ -71,6 +76,7 @@ def main():
                         'tabularis-gateway'], check=True)
         gateway = pwd.getpwnam('tabularis-gateway')
     panel = pwd.getpwnam('psaadm')
+    grp.getgrnam('sw-cp-server')
     CONFIG.mkdir(mode=0o755, exist_ok=True)
     VARIABLE.mkdir(mode=0o750, exist_ok=True)
     os.chown(VARIABLE, 0, panel.pw_gid)
@@ -119,12 +125,13 @@ After=tabularis-broker.service sw-cp-server.service
 Requires=tabularis-broker.service
 [Service]
 User=tabularis-gateway
-Group=tabularis-gateway
+Group=sw-cp-server
+SupplementaryGroups=tabularis-gateway
 Environment=PYTHONPATH={module_path}
 ExecStart=/usr/bin/python3 -m tabularis_plesk.gateway
 RuntimeDirectory=tabularis-gateway
-RuntimeDirectoryMode=0755
-UMask=0000
+RuntimeDirectoryMode=0750
+UMask=0007
 Restart=on-failure
 RestartSec=5
 NoNewPrivileges=true

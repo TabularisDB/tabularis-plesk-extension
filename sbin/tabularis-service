@@ -1,11 +1,22 @@
 #!/usr/bin/python3
 """Fixed lifecycle entry point invoked through the Plesk privileged helper."""
 import os
+from pathlib import Path
 import subprocess
 import sys
 
-if os.geteuid() != 0 or sys.argv[1:] != ["stop"]:
-    sys.exit("Only root may invoke the supported stop operation")
+if os.geteuid() != 0 or sys.argv[1:] not in (["stop"], ["uninstall"]):
+    sys.exit("Only root may invoke a supported lifecycle operation")
 for service in ("tabularis-gateway", "tabularis-broker"):
-    subprocess.run(["/usr/bin/systemctl", "stop", service], check=False,
+    subprocess.run(["/usr/bin/systemctl", "stop", service], check=True,
                    stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+if sys.argv[1] == "uninstall":
+    for service in ("tabularis-gateway", "tabularis-broker"):
+        subprocess.run(["/usr/bin/systemctl", "disable", service], check=True,
+                       stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        Path("/etc/systemd/system/" + service + ".service").unlink(missing_ok=True)
+    for filename in ("tabularis.conf", "tabularis_plesk.inc"):
+        Path("/etc/sw-cp-server/conf.d/" + filename).unlink(missing_ok=True)
+    subprocess.run(["/usr/bin/systemctl", "daemon-reload"], check=True)
+    subprocess.run(["/usr/sbin/sw-cp-serverd", "-t", "-c", "/etc/sw-cp-server/config"], check=True)
+    subprocess.run(["/usr/bin/systemctl", "reload", "sw-cp-server"], check=True)

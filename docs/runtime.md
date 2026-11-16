@@ -20,6 +20,8 @@ The panel web server includes two extension-owned configuration files: `tabulari
 
 ## Provisioning contract
 
+The contract is pinned to core [PR #1574](https://github.com/TabularisDB/tabularis/pull/1574), commit `6cbca5bcd583c4cc591880b087a3a624d103321e`, stacked on #1573 and #1528. Provisioning requests preserve the configured public Host and never send an Origin header.
+
 Each child receives independent `TABULARIS_WEB_PROXY_SECRET` and `TABULARIS_PROVISIONING_TOKEN` environment values. The broker uses:
 
 - `GET /api/v1/provisioning/connections` to obtain existing managed resources.
@@ -37,4 +39,4 @@ Use `systemctl status tabularis-broker tabularis-gateway` for service status. Ac
 
 `/etc/tabularis-plesk/config.json`, signing keys and `/var/lib/tabularis-plesk/journals` require protected backups if recovery is needed. Workspaces themselves are ephemeral. On a failed cleanup, inspect the generated username in the root-only journal and use the installed credential helper's `revoke` operation to retry; do not delete application users or database objects.
 
-Uninstalling the Plesk extension stops extension-owned processes. Configuration and failed-cleanup journals remain for explicit operator review. Never remove the shared Plesk panel configuration or the PostgreSQL HBA file as a cleanup shortcut.
+Uninstalling the Plesk extension stops extension-owned processes and removes only its own service units and panel route files. Configuration and failed-cleanup journals remain for explicit operator review. Never remove the shared Plesk panel configuration or the PostgreSQL HBA file as a cleanup shortcut.

@@ -133,6 +133,8 @@ class Supervisor:
                 self.stop(identifier)
             if len(self.workspaces) >= self.config.get('max_workspaces', 8):
                 raise Denied('Workspace capacity reached; try again later')
+            if (self.state.parent / 'journals' / (identifier + '.json')).exists():
+                raise Denied('Previous credential cleanup requires administrator review')
             self.validate_catalogue(grant)
             workspace = self.start(identifier, grant)
             self.workspaces[identifier] = workspace
@@ -152,7 +154,7 @@ class Supervisor:
                                                    'port': database['port'], 'database': database['name'],
                                                    'username': username, 'password': password,
                                                    'read_only': False}})
-                workspace['connections'] = Provisioner(workspace['port'], workspace['provisioning']).reconcile(connections)
+                workspace['connections'] = Provisioner(workspace['port'], workspace['provisioning'], self.config['public_origin']).reconcile(connections)
                 self.validate_catalogue(grant)
                 workspace['ready'] = True
                 return {**self.public(workspace), 'created': True}
@@ -180,7 +182,7 @@ class Supervisor:
             listener.bind(('127.0.0.1', 0))
             port = listener.getsockname()[1]
         proxy_secret, provisioning = secrets.token_urlsafe(48), secrets.token_urlsafe(48)
-        prefix = '/tabularis/w/' + identifier
+        prefix = '/tabularis/w/' + identifier + '/'
         command = [self.config['binary'], 'web', '--host', '127.0.0.1', '--port', str(port),
                    '--no-open', '--web-root', self.config['web_root'], '--auth', 'proxy',
                    '--public-url', self.config['public_origin'], '--allowed-origin', self.config['public_origin'],
@@ -210,7 +212,9 @@ class Supervisor:
                 time.sleep(0.1)
                 continue
             try:
-                with urllib.request.urlopen(f'http://127.0.0.1:{port}/healthz', timeout=0.3) as response:
+                request = urllib.request.Request(f'http://127.0.0.1:{port}/healthz',
+                                                 headers={'Host': self.config['public_origin'].split('://', 1)[1]})
+                with urllib.request.urlopen(request, timeout=0.3) as response:
                     if response.status == 200:
                         return workspace
             except OSError:
