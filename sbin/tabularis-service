@@ -1,0 +1,11 @@
+#!/usr/bin/python3
+"""Fixed lifecycle entry point invoked through the Plesk privileged helper."""
+import os
+import subprocess
+import sys
+
+if os.geteuid() != 0 or sys.argv[1:] != ["stop"]:
+    sys.exit("Only root may invoke the supported stop operation")
+for service in ("tabularis-gateway", "tabularis-broker"):
+    subprocess.run(["/usr/bin/systemctl", "stop", service], check=False,
+                   stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
