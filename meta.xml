@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module>
+  <id>tabularis</id>
+  <name>Tabularis</name>
+  <description>Open authorized MySQL, MariaDB and PostgreSQL databases in isolated Tabularis Web workspaces.</description>
+  <version>0.1.0</version>
+  <release>1</release>
+  <vendor>TabularisDB</vendor>
+  <url>https://github.com/TabularisDB/tabularis-plesk-extension</url>
+  <plesk_min_version>18.0.59</plesk_min_version>
+  <os>unix</os>
+  <auto_backup>false</auto_backup>
+</module>

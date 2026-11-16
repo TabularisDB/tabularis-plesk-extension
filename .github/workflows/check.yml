@@ -1,0 +1,21 @@
+name: Check extension
+on: [push, pull_request]
+permissions:
+  contents: read
+jobs:
+  validate:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install test dependencies
+        run: sudo apt-get update && sudo apt-get install -y php-cli python3-aiohttp
+      - name: Run Python tests
+        run: python3 -m unittest discover -s tests -v
+      - name: Check PHP syntax
+        run: find plib htdocs _meta -type f \( -name '*.php' -o -name '*.phtml' \) -print0 | xargs -0 -n1 php -l
+      - name: Build extension
+        run: python3 scripts/package.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: plesk-extension
+          path: dist/*.zip
