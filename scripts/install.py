@@ -2,6 +2,8 @@
 """Configure a previously installed Plesk extension with a verified local runtime."""
 import argparse
 import hashlib
+import ipaddress
+import re
 import grp
 import json
 import os
@@ -37,6 +39,16 @@ def root_owned(path):
     return path
 
 
+def proxy_map(addresses):
+    addresses = [str(ipaddress.ip_address(value)) for value in addresses]
+    lines = ['map "$remote_addr|$http_x_forwarded_for" $tabularis_client_ip {',
+             '    default $remote_addr;']
+    if addresses:
+        trusted = '|'.join(re.escape(value) for value in addresses)
+        lines.append('    ~^(?:' + trusted + r')\|(?<tabularis_forwarded_ip>[0-9a-fA-F:.]+)$ $tabularis_forwarded_ip;')
+    return '\n'.join(lines + ['}', ''])
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--binary', type=Path, required=True)
@@ -44,12 +56,15 @@ def main():
     parser.add_argument('--web-root', type=Path, required=True)
     parser.add_argument('--public-origin', required=True)
     parser.add_argument('--max-workspaces', type=int, default=8)
+    parser.add_argument('--trusted-panel-proxy', action='append', default=[],
+                        help='Exact trusted reverse-proxy IP; pair with Plesk panel realIpFrom')
     args = parser.parse_args()
     if os.geteuid() != 0:
         parser.error('Run the installer as root on the Plesk server')
     if sys.version_info < (3, 10):
         parser.error('Python 3.10 or newer is required')
     import aiohttp  # Validate dependencies before making changes.
+    forwarded_map = proxy_map(args.trusted_panel_proxy)
     origin = urlsplit(args.public_origin)
     if origin.scheme != 'https' or not origin.netloc or origin.path not in ('', '/') or origin.query or origin.fragment or origin.username:
         parser.error('--public-origin must be the exact HTTPS origin used by the browser')
@@ -92,6 +107,7 @@ def main():
                 'gateway_socket': '/run/tabularis-gateway/http.sock',
                 'auth_socket': '/run/tabularis-auth.sock', 'max_workspaces': args.max_workspaces,
                 'idle_seconds': 900, 'workspace_memory_mb': 8192,
+                'trusted_panel_proxies': args.trusted_panel_proxy,
                 'plesk_php': '/usr/local/psa/admin/bin/php', 'credential_helper': str(MODULE / 'credentials.php')}
     if (CONFIG / 'config.json').exists():
         previous = json.loads((CONFIG / 'config.json').read_text())
@@ -173,7 +189,7 @@ location ^~ /tabularis/ {
     proxy_pass http://unix:/run/tabularis-gateway/http.sock:;
     proxy_http_version 1.1;
     proxy_set_header Host $http_host;
-    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Real-IP $tabularis_client_ip;
     proxy_set_header Upgrade $http_upgrade;
     proxy_set_header Connection "upgrade";
     proxy_buffering off;
@@ -182,7 +198,7 @@ location ^~ /tabularis/ {
     access_log off;
 }
 '''
-    write(Path('/etc/sw-cp-server/conf.d/tabularis.conf'), nginx, 0o644)
+    write(Path('/etc/sw-cp-server/conf.d/tabularis.conf'), forwarded_map + nginx, 0o644)
     write(Path('/etc/sw-cp-server/conf.d/tabularis_plesk.inc'), location, 0o644)
     subprocess.run(['/usr/sbin/sw-cp-serverd', '-t', '-c', '/etc/sw-cp-server/config'], check=True)
     subprocess.run(['systemctl', 'daemon-reload'], check=True)

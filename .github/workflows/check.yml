@@ -11,6 +11,8 @@ jobs:
         run: sudo apt-get update && sudo apt-get install -y php-cli python3-aiohttp
       - name: Run Python tests
         run: python3 -m unittest discover -s tests -v
+      - name: Check accepted socket identity across Unix users
+        run: sudo python3 -m unittest discover -s tests -p test_transport.py -v
       - name: Check PHP syntax
         run: find plib htdocs _meta -type f \( -name '*.php' -o -name '*.phtml' \) -print0 | xargs -0 -n1 php -l
       - name: Build extension

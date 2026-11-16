@@ -1,5 +1,10 @@
 import unittest
 import threading
+import os
+import socket
+import subprocess
+import sys
+from types import SimpleNamespace
 from http.server import BaseHTTPRequestHandler, HTTPServer
 
 import common
@@ -52,7 +57,7 @@ class ProvisioningTransportTests(unittest.TestCase):
         with HTTPServer(('127.0.0.1', 0), Handler) as server:
             thread = threading.Thread(target=server.handle_request)
             thread.start()
-            service = Provisioner(server.server_port, 'private-machine-token', 'https://panel.example.test:8443')
+            service = Provisioner(server.server_port, 'private-machine-token', 'https://panel.example.test:8443', SimpleNamespace(pid=os.getpid(), poll=lambda: None), os.getuid())
             self.assertEqual(service.request('GET'), [])
             thread.join(timeout=3)
         self.assertEqual(observed['Host'], 'panel.example.test:8443')
@@ -73,7 +78,38 @@ class ProvisioningTransportTests(unittest.TestCase):
         with HTTPServer(('127.0.0.1', 0), Handler) as server:
             thread = threading.Thread(target=server.handle_request)
             thread.start()
-            service = Provisioner(server.server_port, 'private-machine-token', 'https://panel.example.test')
+            service = Provisioner(server.server_port, 'private-machine-token', 'https://panel.example.test', SimpleNamespace(pid=os.getpid(), poll=lambda: None), os.getuid())
             with self.assertRaises(ProvisioningError):
                 service.request('GET')
             thread.join(timeout=3)
+
+    def test_replaced_runtime_port_receives_no_token_or_database_password(self):
+        child = subprocess.Popen([sys.executable, '-c',
+            "import socket,time; s=socket.socket(); s.setsockopt(socket.SOL_SOCKET,socket.SO_REUSEADDR,1); "
+            "s.bind(('127.0.0.1',0)); s.listen(); print(s.getsockname()[1],flush=True); time.sleep(30)"],
+            stdout=subprocess.PIPE, text=True)
+        port = int(child.stdout.readline())
+        from tabularis_plesk.broker import owns_loopback_listener
+        self.assertTrue(owns_loopback_listener(child.pid, port))
+        child.terminate()
+        child.wait(timeout=3)
+        child.stdout.close()
+        received = []
+        with socket.socket() as replacement:
+            replacement.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+            replacement.bind(('127.0.0.1', port))
+            replacement.listen()
+            replacement.settimeout(3)
+
+            def capture():
+                connection, _ = replacement.accept()
+                with connection:
+                    received.append(connection.recv(65536))
+
+            thread = threading.Thread(target=capture)
+            thread.start()
+            service = Provisioner(port, 'must-not-leak-token', 'https://panel.example.test', child, os.getuid())
+            with self.assertRaises(ProvisioningError):
+                service.request('PUT', '/plesk-db-1', {'params': {'password': 'must-not-leak-password'}})
+            thread.join(timeout=3)
+        self.assertEqual(received, [b''])

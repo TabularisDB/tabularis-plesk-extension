@@ -5,7 +5,7 @@ Install the ZIP first, then provide a locally built, pinned Tabularis Web binary
 On the Plesk host as root:
 
 ```sh
-apt-get install python3-aiohttp
+apt-get install --no-install-recommends python3-aiohttp
 # Put the verified binary and frontend under a root-owned, immutable-to-other-users directory.
 python3 scripts/install.py \
   --binary /opt/tabularis/<commit>/tabularis \
@@ -14,13 +14,15 @@ python3 scripts/install.py \
   --public-origin https://panel.example.test:8443
 ```
 
-Use the exact browser origin, including a non-default port. The HTTPS certificate remains the panel's certificate. The installer checks ownership, the binary hash, required CLI flags, frontend presence and Python dependencies before configuring its own services. It preserves existing signing keys and retains the previous configuration when settings change. Existing extension data is not overwritten by a ZIP upgrade. Restarting the broker closes active workspaces and revokes their temporary database accounts; users can reopen them from Plesk.
+Use the exact browser origin, including a non-default port. If the panel is behind a reverse proxy, configure Plesk `panel.ini` `realIpFrom` narrowly and pass the matching exact proxy IP using `--trusted-panel-proxy`. That proxy must discard client-supplied forwarding headers and set a single authenticated source IP. The default trusts no forwarded IP. The gateway map and private callback preserve the same effective client IP that Plesk used at login. The HTTPS certificate remains the panel's certificate. The installer checks ownership, the binary hash, required CLI flags, frontend presence and Python dependencies before configuring its own services. It preserves existing signing keys and retains the previous configuration when settings change. Existing extension data is not overwritten by a ZIP upgrade. Restarting the broker closes active workspaces and revokes their temporary database accounts; users can reopen them from Plesk.
 
 The panel web server includes two extension-owned configuration files: `tabularis.conf` creates a private callback Unix listener and `tabularis_plesk.inc` adds the workspace route to the existing panel. No additional public port or nested Docker daemon is used. The root broker and unprivileged gateway are supervised by systemd. Tabularis child processes run as separate `tbw_...` system users, never as root.
 
 ## Provisioning contract
 
-The contract is pinned to core [PR #1574](https://github.com/TabularisDB/tabularis/pull/1574), commit `6cbca5bcd583c4cc591880b087a3a624d103321e`, stacked on #1573 and #1528. Provisioning requests preserve the configured public Host and never send an Origin header.
+The evaluation runtime is pinned to core commit `9edec8dd4fcd1ac66991f8fd7b1e4badd98e413b` ([PR #1576](https://github.com/TabularisDB/tabularis/pull/1576)), including runtime base paths from #1575 and mandatory proxy credentials on every protected request.
+
+The provisioning contract is pinned to core [PR #1574](https://github.com/TabularisDB/tabularis/pull/1574), commit `6cbca5bcd583c4cc591880b087a3a624d103321e`, stacked on #1573 and #1528. Provisioning requests preserve the configured public Host and never send an Origin header.
 
 Each child receives independent `TABULARIS_WEB_PROXY_SECRET` and `TABULARIS_PROVISIONING_TOKEN` environment values. The broker uses:
 

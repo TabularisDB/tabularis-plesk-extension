@@ -21,9 +21,9 @@ function runPlesk(array $arguments, ?string $password = null): void
 function inspectDatabase(int $databaseId, bool $allowInactive = false): array
 {
     $adapter = pm_Bootstrap::getDbAdapter();
-    $row = $adapter->fetchRow('SELECT b.id, b.name, b.type, b.dom_id, b.db_server_id, d.name AS domain_name, d.cl_id, d.webspace_id, d.status AS domain_status, c.status AS client_status, s.host, s.port FROM data_bases b JOIN domains d ON d.id=b.dom_id JOIN clients c ON c.id=d.cl_id JOIN DatabaseServers s ON s.id=b.db_server_id WHERE b.id=?', [$databaseId]);
+    $row = $adapter->fetchRow('SELECT b.id, b.name, b.type, b.dom_id, b.db_server_id, d.name AS domain_name, d.cl_id, d.webspace_id, d.status AS domain_status, ws.status AS subscription_status, c.status AS client_status, s.host, s.port FROM data_bases b JOIN domains d ON d.id=b.dom_id JOIN domains ws ON ws.id=IF(d.webspace_id=0,d.id,d.webspace_id) JOIN clients c ON c.id=d.cl_id JOIN DatabaseServers s ON s.id=b.db_server_id WHERE b.id=?', [$databaseId]);
     if (!$row || !in_array($row['type'], ['mysql','postgresql'], true)) { fail('Database does not exist or uses an unsupported driver.'); }
-    if (!$allowInactive && ((int)$row['domain_status'] !== 0 || (int)$row['client_status'] !== 0)) { fail('Database owner or domain is not active.'); }
+    if (!$allowInactive && ((int)$row['domain_status'] !== 0 || (int)$row['subscription_status'] !== 0 || (int)$row['client_status'] !== 0)) { fail('Database owner, domain or subscription is not active.'); }
     if (!preg_match('/^[A-Za-z0-9_][A-Za-z0-9_$-]{0,63}$/D', $row['name'])) { fail('Database name is unsupported by the guarded credential adapter.'); }
     if (!preg_match('/^[A-Za-z0-9.:-]+$/D', $row['host'])) { fail('Database host has an unsupported format.'); }
     return [
@@ -45,6 +45,42 @@ function postgresAdmin(array $database): PDO
         fail('The local PostgreSQL administrator must be able to manage role grants and the HBA guard.');
     }
     return $connection;
+}
+
+function mysqlAdmin(array $database): PDO
+{
+    $server=Db_Table_Broker::get('DatabaseServers')->find($database['serverId'])->current();
+    if (!$server) { fail('The database server no longer exists.'); }
+    // The local PSA server stores its admin secret outside DatabaseServers.
+    $connection = $server->isUsedForPsaDb()
+        ? pm_Bootstrap::getDbAdapter()->getConnection()
+        : new PDO('mysql:host='.$database['host'].';port='.$database['port'].';charset=utf8mb4', $server->admin_login, $server->getPassword(), [PDO::ATTR_ERRMODE=>PDO::ERRMODE_EXCEPTION]);
+    $privileges = [];
+    foreach ($connection->query('SHOW GRANTS FOR CURRENT_USER')->fetchAll(PDO::FETCH_COLUMN) as $grant) {
+        if (preg_match('/^GRANT (.+) ON \*\.\* TO /i', $grant, $match)) {
+            $privileges = array_merge($privileges, array_map('trim', explode(',', strtoupper($match[1]))));
+        }
+    }
+    if (!in_array('ALL PRIVILEGES', $privileges, true)
+        && (!in_array('PROCESS', $privileges, true)
+            || !array_intersect(['SUPER', 'CONNECTION_ADMIN', 'CONNECTION ADMIN'], $privileges))) {
+        fail('The registered MySQL administrator needs explicit global PROCESS and connection termination privileges.');
+    }
+    return $connection;
+}
+
+function killMySqlSessions(PDO $connection, string $username): void
+{
+    $statement=$connection->prepare('SELECT ID FROM information_schema.PROCESSLIST WHERE USER=? AND ID<>CONNECTION_ID()');
+    $statement->execute([$username]);
+    foreach ($statement->fetchAll(PDO::FETCH_COLUMN) as $id) {
+        if (!ctype_digit((string)$id)) { fail('The database returned an invalid connection ID.'); }
+        try { $connection->exec('KILL CONNECTION '.(int)$id); }
+        catch (PDOException $error) {
+            // A concurrently closed connection is already revoked; all other failures matter.
+            if (($error->errorInfo[1] ?? null)!==1094) { throw $error; }
+        }
+    }
 }
 
 /** Guard only this generated role. Preserve all unrelated rules and their order. */
@@ -115,6 +151,21 @@ function grantPostgresObjects(PDO $connection, string $username, array $database
     } catch (Throwable $error) { $connection->rollBack(); throw $error; }
 }
 
+function validatePostgresRole(PDO $connection, string $username, array $database): void
+{
+    $check = $connection->prepare('SELECT rolsuper OR rolcreatedb OR rolcreaterole OR rolreplication OR rolbypassrls FROM pg_roles WHERE rolname=?');
+    $check->execute([$username]);
+    if ($check->fetchColumn()) { fail('Generated PostgreSQL role has unexpected global privileges.'); }
+    $memberships = $connection->prepare('SELECT parent.rolname, parent.rolsuper OR parent.rolcreatedb OR parent.rolcreaterole OR parent.rolreplication OR parent.rolbypassrls AS elevated, m.admin_option, EXISTS(SELECT 1 FROM pg_auth_members nested WHERE nested.member=parent.oid) AS nested FROM pg_auth_members m JOIN pg_roles child ON child.oid=m.member JOIN pg_roles parent ON parent.oid=m.roleid WHERE child.rolname=?');
+    $memberships->execute([$username]);
+    foreach ($memberships->fetchAll(PDO::FETCH_ASSOC) as $membership) {
+        if ($membership['rolname'] !== $database['database'] || $membership['elevated']
+            || $membership['admin_option'] || $membership['nested']) {
+            fail('Generated PostgreSQL role has unexpected role membership.');
+        }
+    }
+}
+
 function provision(array $database, string $username, string $password): array
 {
     $adapter = pm_Bootstrap::getDbAdapter();
@@ -123,6 +174,7 @@ function provision(array $database, string $username, string $password): array
         fail('Generated database username is already assigned to another database.');
     }
     $pg = $database['driver']==='postgresql' ? postgresAdmin($database) : null;
+    if ($database['driver'] === 'mysql') { mysqlAdmin($database); }
     if ($pg) {
         $statement=$pg->prepare('SELECT oid FROM pg_roles WHERE rolname=?'); $statement->execute([$username]);
         if (!$existing && $statement->fetchColumn()) { fail('Generated PostgreSQL username already exists outside this adapter.'); }
@@ -135,6 +187,7 @@ function provision(array $database, string $username, string $password): array
     }
     if ($pg) {
         try {
+            validatePostgresRole($pg, $username, $database);
             grantPostgresObjects($pg,$username,$database);
             $pg->exec('ALTER ROLE '.qi($username).' LOGIN');
         } catch (Throwable $error) {
@@ -155,6 +208,7 @@ function revoke(array $database, string $username): array
         fail('Generated database username belongs to another database.');
     }
     $pg = $database['driver']==='postgresql' ? postgresAdmin($database) : null;
+    $mysql = $database['driver']==='mysql' ? mysqlAdmin($database) : null;
     if ($pg) {
         $statement=$pg->prepare('SELECT oid FROM pg_roles WHERE rolname=?'); $statement->execute([$username]);
         if ($statement->fetchColumn()) {
@@ -192,6 +246,9 @@ function revoke(array $database, string $username): array
         }
     }
     if ($existing) { runPlesk(['database','--remove-dbuser',$username,'-server',$database['host'].':'.$database['port']]); }
+    // DROP USER does not terminate existing MySQL sessions. Remove credentials
+    // first so no new connection can race the exact-username cancellation.
+    if ($mysql) { killMySqlSessions($mysql,$username); }
     if ($pg) {
         // Plesk can leave a NOLOGIN role behind after removing its account record.
         $pg->exec('DROP ROLE IF EXISTS '.qi($username));

@@ -8,7 +8,7 @@ from pathlib import Path
 import re
 from urllib.parse import urlsplit
 
-from aiohttp import ClientSession, ClientTimeout, UnixConnector, WSMsgType, web
+from aiohttp import ClientError, ClientConnectionError, ClientSession, ClientTimeout, DummyCookieJar, TCPConnector, UnixConnector, WSMsgType, web
 
 from .policy import workspace_key
 
@@ -17,7 +17,9 @@ HOP_HEADERS = {'connection', 'keep-alive', 'proxy-authenticate', 'proxy-authoriz
 BLOCKED_HEADERS = HOP_HEADERS | {'host', 'cookie', 'authorization', 'forwarded',
                                  'x-forwarded-for', 'x-forwarded-host', 'x-forwarded-proto',
                                  'x-tabularis-user', 'x-tabularis-proxy-secret',
-                                 'x-tabularis-client-ip', 'x-tabularis-callback'}
+                                 'x-tabularis-client-ip', 'x-tabularis-callback',
+                                 'sec-websocket-key', 'sec-websocket-version',
+                                 'sec-websocket-extensions', 'sec-websocket-protocol'}
 
 
 def upstream_headers(request, workspace, origin):
@@ -33,6 +35,21 @@ def upstream_headers(request, workspace, origin):
     return headers
 
 
+class RuntimeConnector(TCPConnector):
+    def __init__(self, attest):
+        super().__init__()
+        self.attest = attest
+
+    async def _wrap_create_connection(self, *args, **kwargs):
+        transport, protocol = await super()._wrap_create_connection(*args, **kwargs)
+        try:
+            await self.attest(transport.get_extra_info('socket'))
+            return transport, protocol
+        except Exception:
+            transport.close()
+            raise ClientConnectionError('Private runtime transport verification failed') from None
+
+
 class Gateway:
     def __init__(self, config):
         self.config = config
@@ -41,16 +58,31 @@ class Gateway:
         self.authorizer = None
         self.client = None
         self.bindings = {}
+        self.revocations = {}
+        self.targets = {}
 
     async def start(self, app):
         self.authorizer = ClientSession(connector=UnixConnector(path=self.config['auth_socket']),
-                                        timeout=ClientTimeout(total=15))
+                                        timeout=ClientTimeout(total=15), cookie_jar=DummyCookieJar())
         self.client = ClientSession(timeout=ClientTimeout(total=None, sock_connect=10, sock_read=300),
-                                    auto_decompress=False)
+                                    connector=RuntimeConnector(self.attest),
+                                    cookie_jar=DummyCookieJar(), auto_decompress=False)
 
     async def cleanup(self, app):
+        for task in list(self.revocations.values()):
+            task.cancel()
+        await asyncio.gather(*list(self.revocations.values()), return_exceptions=True)
         await self.authorizer.close()
         await self.client.close()
+
+    async def attest(self, connection):
+        client = connection.getsockname()
+        server = connection.getpeername()
+        workspace = self.targets.get(server[1])
+        if client[0] != '127.0.0.1' or server[0] != '127.0.0.1' or not workspace:
+            raise ClientConnectionError('Unknown runtime connection')
+        await asyncio.wait_for(self.broker({'action': 'attest', 'workspace': workspace,
+                                            'client_port': client[1], 'server_port': server[1]}), timeout=2)
 
     async def broker(self, value):
         reader, writer = await asyncio.open_unix_connection(self.config['broker_socket'], limit=196608)
@@ -91,15 +123,33 @@ class Gateway:
         grant = json.loads(base64.b64decode(envelope['payload'], validate=True))
         return envelope, workspace_key(grant)
 
+    def revoke_later(self, identifier):
+        if identifier in self.revocations:
+            return
+
+        async def revoke():
+            try:
+                await asyncio.wait_for(self.broker({'action': 'revoke', 'workspace': identifier}), timeout=5)
+            except Exception:
+                # Relays are already closed. The broker's idle/recovery cleanup is
+                # the fallback if local cleanup cannot complete in this bound.
+                pass
+            finally:
+                self.revocations.pop(identifier, None)
+
+        self.revocations[identifier] = asyncio.create_task(revoke())
+
     async def revalidate(self, request, identifier):
         try:
             envelope, current = await self.authorize(request)
             if current != identifier:
                 raise web.HTTPForbidden(text='Database access changed. Open Tabularis again from Plesk.')
-            await self.broker({'action': 'acquire', 'grant': envelope})
+            # This operation never waits for unrelated workspace provisioning.
+            await asyncio.wait_for(self.broker({'action': 'touch', 'grant': envelope,
+                                                'workspace': identifier}), timeout=2)
         except Exception:
-            # This method is only called for a previously authorized live stream.
-            await self.broker({'action': 'revoke', 'workspace': identifier})
+            # Never await privileged cleanup before the caller closes both relays.
+            self.revoke_later(identifier)
             raise
 
     async def handle(self, request):
@@ -114,6 +164,9 @@ class Gateway:
                 workspace = await self.broker({'action': 'acquire', 'grant': envelope})
                 if workspace['id'] != authorized:
                     raise web.HTTPForbidden(text='Workspace identity mismatch')
+                if len(self.targets) >= 4096:
+                    self.targets.pop(next(iter(self.targets)))
+                self.targets[workspace['port']] = authorized
                 if workspace.get('created'):
                     await self.revalidate(request, authorized)
                 if len(self.bindings) >= 4096:
@@ -138,9 +191,9 @@ class Gateway:
             except web.HTTPException as error:
                 if identifier and error.status in (401, 403) and self.bindings.get(binding) == identifier:
                     self.bindings.pop(binding, None)
-                    await self.broker({'action': 'revoke', 'workspace': identifier})
+                    self.revoke_later(identifier)
                 raise
-            except (OSError, ValueError, KeyError, asyncio.TimeoutError):
+            except (OSError, ValueError, KeyError, ClientError, asyncio.TimeoutError):
                 raise web.HTTPServiceUnavailable(text='Tabularis is temporarily unavailable.') from None
 
     async def http(self, request, target, headers, data, identifier):

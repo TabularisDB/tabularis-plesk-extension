@@ -1,42 +1,55 @@
 """Server-to-server connection reconciliation; never edit Tabularis persistence."""
+import http.client
 import json
 import re
-import urllib.error
-import urllib.request
 from urllib.parse import urlsplit
+
+from .transport import owns_connected_peer
 
 
 class ProvisioningError(Exception):
     pass
 
 
-class NoRedirect(urllib.request.HTTPRedirectHandler):
-    def redirect_request(self, request, fp, code, message, headers, new_url):
-        return None
+class RuntimeConnection(http.client.HTTPConnection):
+    def __init__(self, port, process, expected_uid):
+        super().__init__('127.0.0.1', port, timeout=20)
+        self.process = process
+        self.expected_uid = expected_uid
+
+    def connect(self):
+        super().connect()
+        if not owns_connected_peer(self.process, self.expected_uid, self.sock.getsockname(), self.sock.getpeername()):
+            self.close()
+            raise ProvisioningError('The private runtime connection could not be verified')
 
 
 class Provisioner:
-    def __init__(self, port, token, public_origin):
-        self.base = f'http://127.0.0.1:{port}/api/v1/provisioning/connections'
+    def __init__(self, port, token, public_origin, process, expected_uid):
+        self.port = port
         self.token = token
         self.host = urlsplit(public_origin).netloc
-        self.client = urllib.request.build_opener(NoRedirect())
+        self.process = process
+        self.expected_uid = expected_uid
 
     def request(self, method, suffix='', body=None):
         data = None if body is None else json.dumps(body).encode()
-        request = urllib.request.Request(self.base + suffix, data=data, method=method,
-                                         headers={'Host': self.host, 'Authorization': 'Bearer ' + self.token,
-                                                  'Content-Type': 'application/json'})
+        connection = RuntimeConnection(self.port, self.process, self.expected_uid)
         try:
-            with self.client.open(request, timeout=20) as response:
-                payload = response.read(2 * 1024 * 1024)
-                return json.loads(payload) if payload else None
-        except urllib.error.HTTPError as error:
-            error.close()
+            # connect() attests the accepted TCP endpoint before request() writes
+            # headers or credentials. HTTPConnection never follows redirects.
+            connection.request(method, '/api/v1/provisioning/connections' + suffix, body=data,
+                               headers={'Host': self.host, 'Authorization': 'Bearer ' + self.token,
+                                        'Content-Type': 'application/json'})
+            response = connection.getresponse()
+            payload = response.read(2 * 1024 * 1024 + 1)
+            if not 200 <= response.status < 300 or len(payload) > 2 * 1024 * 1024:
+                raise ProvisioningError('Connection provisioning failed')
+            return json.loads(payload) if payload else None
+        except (OSError, ValueError, http.client.HTTPException):
             raise ProvisioningError('Connection provisioning failed') from None
-        except (OSError, ValueError):
-            # Error responses may contain private downstream details.
-            raise ProvisioningError('Connection provisioning failed') from None
+        finally:
+            connection.close()
 
     def reconcile(self, connections):
         existing = self.request('GET')
@@ -46,7 +59,6 @@ class Provisioner:
         ):
             raise ProvisioningError('Invalid provisioning catalogue')
         desired = {str(item['external_ref']): item for item in connections}
-        # Never admit requests while a removed connection is still usable.
         for item in existing:
             if item['external_ref'] not in desired:
                 self.request('DELETE', '/' + item['external_ref'])

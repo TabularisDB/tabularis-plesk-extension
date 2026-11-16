@@ -16,9 +16,9 @@ Observed on the official `plesk/plesk` Linux container, Plesk 18.0.82.3 / Ubuntu
 | PostgreSQL cleanup | Login disabled, sessions terminated, role removed; its created objects retained by transfer to an unprivileged NOLOGIN owner; SECURITY DEFINER escalation test denied |
 | MariaDB dedicated account reads/writes | Successful |
 | MariaDB `psa` and `mysql` databases | Denied |
-| MariaDB cleanup | Generated account removed |
+| MariaDB cleanup | Generated account removed; an existing SLEEP(15) query terminated within 0.3 seconds |
 | Application passwords | Unchanged in the tested provisioning paths |
-| Python security/protocol tests | Pass, including a live local WebSocket closed on permission revocation |
+| Python security/protocol tests | Pass, including a live WebSocket closed despite blocked cleanup, a replaced runtime port receiving zero secret bytes, and two panel sessions isolated from callback Set-Cookie |
 | PHP syntax and deterministic packaging | Pass |
 
 Full gateway-to-Tabularis UI/SQL verification awaits the pinned core runtime integration and is recorded in the lab report. No fake runtime is substituted for this check.

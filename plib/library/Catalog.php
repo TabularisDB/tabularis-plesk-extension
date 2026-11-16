@@ -25,15 +25,17 @@ class Modules_Tabularis_Catalog
         $adapter = pm_Bootstrap::getDbAdapter();
         $rows = $adapter->fetchAll(
             'SELECT db.id, db.name, db.type, db.dom_id, db.db_server_id, '
-            . 'ds.host, ds.port, d.name AS domain, d.cl_id, d.webspace_id, d.status, c.status AS client_status '
+            . 'ds.host, ds.port, d.name AS domain, d.cl_id, d.webspace_id, d.status, ws.status AS subscription_status, c.status AS client_status '
             . 'FROM data_bases db JOIN domains d ON d.id = db.dom_id '
+            . 'JOIN domains ws ON ws.id = IF(d.webspace_id = 0, d.id, d.webspace_id) '
             . 'JOIN clients c ON c.id = d.cl_id JOIN DatabaseServers ds ON ds.id = db.db_server_id '
             . "WHERE db.type IN ('mysql', 'postgresql') ORDER BY db.id"
         );
         $databases = [];
         foreach ($rows as $row) {
             $domainId = (int) $row['dom_id'];
-            if ((int) $row['status'] !== 0 || (int) $row['client_status'] !== 0) {
+            if ((int) $row['status'] !== 0 || (int) $row['subscription_status'] !== 0
+                || (int) $row['client_status'] !== 0) {
                 continue;
             }
             $webspaceId = (int) $row['webspace_id'] ?: $domainId;

@@ -19,6 +19,7 @@ import urllib.request
 
 from .policy import Denied, verify_grant, workspace_key, same_database
 from .provisioning import Provisioner
+from .transport import owns_connected_peer
 
 
 def atomic_json(path, value, mode=0o600):
@@ -35,10 +36,10 @@ def owns_loopback_listener(pid, port):
     """Do not send provisioning secrets to a process that won an ephemeral-port race."""
     expected = f'0100007F:{port:04X}'
     try:
-        inodes = {line.split()[9] for line in Path('/proc/net/tcp').read_text().splitlines()[1:]
-                  if line.split()[1] == expected and line.split()[3] == '0A'}
-        return any(os.readlink(path) in {'socket:[' + inode + ']' for inode in inodes}
-                   for path in Path(f'/proc/{pid}/fd').iterdir())
+        uid = Path(f'/proc/{pid}').stat().st_uid
+        return any(line.split()[1] == expected and line.split()[3] == '0A'
+                   and int(line.split()[7]) == uid
+                   for line in Path('/proc/net/tcp').read_text().splitlines()[1:])
     except (OSError, IndexError):
         return False
 
@@ -48,7 +49,9 @@ class Supervisor:
         self.config = config
         self.key = Path(config['grant_key']).read_bytes().strip()
         self.state = Path(config['state_dir'])
-        self.state.mkdir(mode=0o700, parents=True, exist_ok=True)
+        self.state.parent.mkdir(mode=0o711, parents=True, exist_ok=True)
+        os.chmod(self.state.parent, 0o711)
+        self.state.mkdir(mode=0o711, exist_ok=True)
         self.workspaces = {}
         self.lock = threading.RLock()
         self.recover()
@@ -141,6 +144,8 @@ class Supervisor:
             try:
                 connections = []
                 for database in grant['databases']:
+                    if workspace['cancelled'].is_set():
+                        raise Denied('Workspace authorization was revoked')
                     username = 'tab_' + secrets.token_hex(12)
                     password = secrets.token_urlsafe(36)
                     # Journal intent first, so a helper timeout cannot lose cleanup ownership.
@@ -154,8 +159,10 @@ class Supervisor:
                                                    'port': database['port'], 'database': database['name'],
                                                    'username': username, 'password': password,
                                                    'read_only': False}})
-                workspace['connections'] = Provisioner(workspace['port'], workspace['provisioning'], self.config['public_origin']).reconcile(connections)
+                workspace['connections'] = Provisioner(workspace['port'], workspace['provisioning'], self.config['public_origin'], workspace['process'], workspace['uid']).reconcile(connections)
                 self.validate_catalogue(grant)
+                if workspace['cancelled'].is_set():
+                    raise Denied('Workspace authorization was revoked')
                 workspace['ready'] = True
                 return {**self.public(workspace), 'created': True}
             except Exception:
@@ -191,7 +198,8 @@ class Supervisor:
         environment = {'PATH': '/usr/bin:/bin', 'HOME': str(home),
                        'XDG_CONFIG_HOME': str(home / '.config'), 'XDG_DATA_HOME': str(home / '.local/share'),
                        'TABULARIS_WEB_PROXY_SECRET': proxy_secret,
-                       'TABULARIS_PROVISIONING_TOKEN': provisioning, 'RUST_LOG': 'warn'}
+                       'TABULARIS_PROVISIONING_TOKEN': provisioning, 'RUST_LOG': 'warn',
+                       'TOKIO_WORKER_THREADS': '4', 'RAYON_NUM_THREADS': '2'}
 
         environment['PYTHONPATH'] = str(Path(__file__).resolve().parents[1])
         memory = self.config.get('workspace_memory_mb', 8192) * 1024 * 1024
@@ -202,7 +210,8 @@ class Supervisor:
         workspace = {'id': identifier, 'session': grant['session'], 'identity': grant['identity'],
                      'port': port, 'proxy_secret': proxy_secret, 'provisioning': provisioning,
                      'process': process, 'used': time.monotonic(), 'connections': {},
-                     'credentials': [], 'ready': False, 'uid': user.pw_uid, 'account': account}
+                     'credentials': [], 'ready': False, 'uid': user.pw_uid, 'account': account,
+                     'cancelled': threading.Event()}
         self.journal(workspace)
         for _ in range(100):
             if process.poll() is not None:
@@ -240,6 +249,39 @@ class Supervisor:
             raise Denied('Workspace is not ready')
         return {key: workspace[key] for key in ('id', 'port', 'proxy_secret', 'identity', 'connections')}
 
+    def attest(self, identifier, client_port, server_port):
+        workspace = self.workspaces.get(identifier)
+        if not workspace or not workspace['ready'] or workspace['cancelled'].is_set():
+            raise Denied('Workspace is unavailable')
+        if type(client_port) is not int or not 1 <= client_port <= 65535 or server_port != workspace['port']:
+            raise Denied('Invalid runtime connection')
+        if not owns_connected_peer(workspace['process'], workspace['uid'], ('127.0.0.1', client_port), ('127.0.0.1', server_port)):
+            raise Denied('Runtime connection ownership changed')
+        return {'verified': True}
+
+    def touch(self, identifier, envelope):
+        grant = verify_grant(envelope, self.key)
+        if workspace_key(grant) != identifier:
+            raise Denied('Workspace access changed')
+        workspace = self.workspaces.get(identifier)
+        if not workspace or not workspace['ready'] or workspace['cancelled'].is_set():
+            raise Denied('Workspace is not available')
+        workspace['used'] = time.monotonic()
+        return {'active': True}
+
+    def interrupt(self, identifier):
+        # The process record is immutable after insertion. Signal immediately,
+        # even while another worker holds the provisioning lock; cleanup follows.
+        workspace = self.workspaces.get(identifier)
+        if workspace:
+            workspace['cancelled'].set()
+            process = workspace['process']
+            if process.poll() is None:
+                try:
+                    os.killpg(process.pid, signal.SIGTERM)
+                except ProcessLookupError:
+                    pass
+
     def stop(self, identifier):
         workspace = self.workspaces.pop(identifier, None)
         if not workspace:
@@ -274,7 +316,12 @@ class BrokerHandler(socketserver.StreamRequestHandler):
             request = json.loads(line)
             if request.get('action') == 'acquire':
                 response = self.server.supervisor.acquire(request['grant'])
+            elif request.get('action') == 'attest':
+                response = self.server.supervisor.attest(str(request['workspace']), request['client_port'], request['server_port'])
+            elif request.get('action') == 'touch':
+                response = self.server.supervisor.touch(str(request['workspace']), request['grant'])
             elif request.get('action') == 'revoke':
+                self.server.supervisor.interrupt(str(request['workspace']))
                 with self.server.supervisor.lock:
                     self.server.supervisor.stop(str(request['workspace']))
                 response = {'revoked': True}
