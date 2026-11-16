@@ -128,7 +128,7 @@ class GatewaySecurityTests(unittest.IsolatedAsyncioTestCase):
                 app = web.Application()
 
                 async def endpoint(request):
-                    return await self.gateway.http(request, str(upstream_server.make_url('/query')), {}, None, 'a' * 32)
+                    return await self.gateway.http(request, str(upstream_server.make_url('/query')), {}, 'a' * 32)
 
                 app.router.add_get('/query', endpoint)
                 async with TestServer(app) as server:
@@ -138,6 +138,84 @@ class GatewaySecurityTests(unittest.IsolatedAsyncioTestCase):
                             await asyncio.wait_for(client.get(server.make_url('/query')), timeout=6)
                     finally:
                         release.set()
+
+    async def test_revoked_slow_upload_closes_before_reaching_runtime(self):
+        authorized = True
+        started = asyncio.Event()
+        received = []
+
+        async def validate(request):
+            started.set()
+            if not authorized:
+                raise web.HTTPForbidden()
+            return {}, 'a' * 32
+
+        async def upstream(request):
+            received.append(await request.read())
+            return web.Response(text='query executed')
+
+        upstream_app = web.Application()
+        upstream_app.router.add_post('/query', upstream)
+        async with TestServer(upstream_app) as upstream_server, ClientSession() as client:
+            self.gateway.client = client
+            self.gateway.authorize = validate
+
+            async def broker(value):
+                return {'id': 'a' * 32, 'port': upstream_server.port,
+                        'identity': 'verified', 'proxy_secret': 'private',
+                        'connections': {}, 'created': False}
+
+            self.gateway.broker = broker
+            app = web.Application()
+            app.router.add_post('/tabularis/w/{workspace}/{tail:.*}', self.gateway.handle)
+            async with TestServer(app) as server:
+                reader, writer = await asyncio.open_connection(server.host, server.port)
+                writer.write(('POST /tabularis/w/' + 'a' * 32 + '/query HTTP/1.1\r\n'
+                              'Host: panel.example.test\r\nContent-Length: 2\r\n\r\n{').encode())
+                await writer.drain()
+                try:
+                    await started.wait()
+                    authorized = False
+                    self.assertEqual(await asyncio.wait_for(reader.read(), timeout=5), b'')
+                    self.assertEqual(received, [])
+                    # Finishing the old upload after denial must not resurrect the relay.
+                    writer.write(b'}')
+                    try:
+                        await writer.drain()
+                    except ConnectionError:
+                        pass
+                finally:
+                    writer.close()
+                    try:
+                        await writer.wait_closed()
+                    except ConnectionError:
+                        pass
+                    await asyncio.gather(*list(self.gateway.revocations.values()))
+                self.assertEqual(received, [])
+
+    async def test_authorized_post_body_is_forwarded_unchanged(self):
+        received = []
+
+        async def upstream(request):
+            received.append(await request.read())
+            return web.Response(text='query completed')
+
+        upstream_app = web.Application()
+        upstream_app.router.add_post('/query', upstream)
+        async with TestServer(upstream_app) as upstream_server, ClientSession() as client:
+            self.gateway.client = client
+            self.gateway.authorize = AsyncMock(return_value=({}, 'a' * 32))
+            self.gateway.broker = AsyncMock(return_value={
+                'id': 'a' * 32, 'port': upstream_server.port, 'identity': 'verified',
+                'proxy_secret': 'private', 'connections': {}, 'created': False})
+            app = web.Application()
+            app.router.add_post('/tabularis/w/{workspace}/{tail:.*}', self.gateway.handle)
+            async with TestServer(app) as server:
+                async with client.post(server.make_url('/tabularis/w/' + 'a' * 32 + '/query'),
+                                       data=b'{"query":"SELECT 1"}') as response:
+                    self.assertEqual(response.status, 200)
+                    self.assertEqual(await response.text(), 'query completed')
+            self.assertEqual(received, [b'{"query":"SELECT 1"}'])
 
     async def test_established_websocket_closes_after_permission_revocation(self):
         authorized = True

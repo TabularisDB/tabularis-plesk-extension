@@ -186,8 +186,7 @@ class Gateway:
                 headers = upstream_headers(request, workspace, self.config['public_origin'])
                 if request.headers.get('Upgrade', '').lower() == 'websocket':
                     return await self.websocket(request, target, headers, authorized)
-                data = await request.read() if request.can_read_body else None
-                return await self.http(request, target, headers, data, authorized)
+                return await self.http(request, target, headers, authorized)
             except web.HTTPException as error:
                 if identifier and error.status in (401, 403) and self.bindings.get(binding) == identifier:
                     self.bindings.pop(binding, None)
@@ -196,8 +195,10 @@ class Gateway:
             except (OSError, ValueError, KeyError, ClientError, asyncio.TimeoutError):
                 raise web.HTTPServiceUnavailable(text='Tabularis is temporarily unavailable.') from None
 
-    async def http(self, request, target, headers, data, identifier):
+    async def http(self, request, target, headers, identifier):
         async def relay():
+            # The monitor must run during a slow upload as well as the upstream query.
+            data = await request.read() if request.can_read_body else None
             async with self.client.request(request.method, target, headers=headers, data=data,
                                            allow_redirects=False) as upstream:
                 response = web.StreamResponse(status=upstream.status)

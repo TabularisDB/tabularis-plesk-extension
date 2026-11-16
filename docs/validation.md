@@ -19,7 +19,7 @@ Observed on the official `plesk/plesk` Linux container, Plesk 18.0.82.3 / Ubuntu
 | MariaDB `psa` and `mysql` databases | Denied |
 | MariaDB cleanup | Generated account removed; an existing SLEEP(15) query terminated within 0.3 seconds |
 | Application passwords | Unchanged in the tested provisioning paths |
-| Python/PHP security/protocol suite | 21 tests: 20 pass locally; the root-only cross-UID test passes against the installed extension in Plesk. Includes blocked-cleanup stream cancellation, replaced ports receiving zero secret bytes, callback cookie isolation and authorized native card links |
+| Python/PHP security/protocol suite | 23 tests: 22 pass locally; the root-only cross-UID test passes against the installed extension in Plesk. Includes blocked-cleanup stream cancellation, revoked slow uploads never reaching the runtime, unchanged authorized POST bodies, replaced ports receiving zero secret bytes, callback cookie isolation and authorized native card links |
 | PHP syntax and deterministic packaging | Pass |
 
 The real public Plesk gateway starts the pinned core runtime and loads both editors. PostgreSQL browses 5 tables and 2 views; MariaDB browses 4 tables and 1 view. Both execute SELECT/UPDATE, create a table inside an existing schema/database, insert generated identity/auto-increment values, drop their own test table and survive a direct editor URL refresh. Local MariaDB requires an explicit disabled-TLS setting because the bundled server has no TLS; this is allowed only for a literal loopback address, while remote MySQL requires verified TLS identity. No fake runtime is substituted for these checks.
