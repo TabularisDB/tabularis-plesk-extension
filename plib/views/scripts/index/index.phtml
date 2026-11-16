@@ -1,5 +1,23 @@
-<h1>Tabularis</h1>
-<p>Use Tabularis to work with your authorized MySQL, MariaDB and PostgreSQL databases.</p>
+<p>Open an authorized MySQL, MariaDB or PostgreSQL database in a new tab. Your Plesk session controls access.</p>
 <?php if (!$this->configured): ?>
 <p role="status">An administrator must configure the pinned Tabularis runtime before workspaces can be opened.</p>
+<?php elseif ($this->catalogError): ?>
+<p role="alert">Database permissions could not be verified. Contact your Plesk administrator.</p>
+<?php elseif (!$this->databases): ?>
+<p role="status">No accessible databases are available.</p>
+<?php else: ?>
+<ul class="tabularis-databases" aria-label="Your accessible databases">
+    <?php foreach ($this->databases as $database): ?>
+    <li class="tabularis-database" aria-labelledby="tabularis-database-<?= (int) $database['id'] ?>">
+        <h2 id="tabularis-database-<?= (int) $database['id'] ?>"><?= $this->escape($database['name']) ?></h2>
+        <dl>
+            <dt>Website</dt><dd><?= $this->escape($database['domain']) ?></dd>
+            <dt>Engine</dt><dd><?= $database['driver'] === 'postgres' ? 'PostgreSQL' : 'MySQL / MariaDB' ?></dd>
+        </dl>
+        <a class="btn tabularis-database__open" href="/tabularis/open/<?= (int) $database['id'] ?>"
+            target="_blank" rel="noopener noreferrer"
+            aria-label="<?= $this->escape('Open ' . $database['name'] . ' in Tabularis (new tab)') ?>">Open in Tabularis ↗</a>
+    </li>
+    <?php endforeach; ?>
+</ul>
 <?php endif; ?>
