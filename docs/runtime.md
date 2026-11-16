@@ -35,6 +35,8 @@ External references are `plesk-db-<Plesk database ID>`. The gateway receives onl
 
 The child uses `--auth proxy --connection-mode managed-only --base-path /tabularis/w/<opaque-id>`. The gateway removes that external prefix before forwarding; the runtime applies it to asset URLs, frontend navigation and cookie paths. The current connection deep link is `/connections/<id>/editor` under that prefix.
 
+PostgreSQL workspaces can read/write tables, use sequences and create objects inside existing permitted schemas. They cannot create new schemas or ALTER/DROP existing application-owned objects. New schemas created separately by a database administrator require reopening a fresh workspace to recompute grants.
+
 ## Diagnosis and removal
 
 Use `systemctl status tabularis-broker tabularis-gateway` for service status. Access logs are disabled on the workspace and private callback routes. Service errors intentionally omit credential-helper exception details. Do not publish environment values, panel cookies or private JSON files in bug reports.

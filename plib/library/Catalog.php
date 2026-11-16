@@ -38,6 +38,12 @@ class Modules_Tabularis_Catalog
                 || (int) $row['client_status'] !== 0) {
                 continue;
             }
+            // Keep impersonation inside the effective customer even if an internal
+            // authentication object still describes the administrator actor.
+            if (!$client->isAdmin() && !$client->isReseller()
+                && (int) $row['cl_id'] !== (int) $client->getId()) {
+                continue;
+            }
             $webspaceId = (int) $row['webspace_id'] ?: $domainId;
             if ($user) {
                 if (!$user->isAdmin() && (int) $user->ownerId !== (int) $row['cl_id']

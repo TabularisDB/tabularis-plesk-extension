@@ -1,4 +1,3 @@
-<h1>Tabularis</h1>
 <p>Open an authorized MySQL, MariaDB or PostgreSQL database in a new tab. Your Plesk session controls access.</p>
 <?php if (!$this->configured): ?>
 <p role="status">An administrator must configure the pinned Tabularis runtime before workspaces can be opened.</p>
@@ -7,19 +6,18 @@
 <?php elseif (!$this->databases): ?>
 <p role="status">No accessible databases are available.</p>
 <?php else: ?>
-<table class="list">
-    <caption>Your accessible databases</caption>
-    <thead><tr><th scope="col">Domain</th><th scope="col">Database</th><th scope="col">Engine</th><th scope="col">Action</th></tr></thead>
-    <tbody>
+<ul class="tabularis-databases" aria-label="Your accessible databases">
     <?php foreach ($this->databases as $database): ?>
-        <tr>
-            <td><?= $this->escape($database['domain']) ?></td>
-            <td><?= $this->escape($database['name']) ?></td>
-            <td><?= $database['driver'] === 'postgres' ? 'PostgreSQL' : 'MySQL / MariaDB' ?></td>
-            <td><a href="/tabularis/open/<?= (int) $database['id'] ?>" target="_blank" rel="noopener noreferrer"
-                aria-label="<?= $this->escape('Open ' . $database['name'] . ' in Tabularis (new tab)') ?>">Open in Tabularis ↗</a></td>
-        </tr>
+    <li class="tabularis-database" aria-labelledby="tabularis-database-<?= (int) $database['id'] ?>">
+        <h2 id="tabularis-database-<?= (int) $database['id'] ?>"><?= $this->escape($database['name']) ?></h2>
+        <dl>
+            <dt>Website</dt><dd><?= $this->escape($database['domain']) ?></dd>
+            <dt>Engine</dt><dd><?= $database['driver'] === 'postgres' ? 'PostgreSQL' : 'MySQL / MariaDB' ?></dd>
+        </dl>
+        <a class="btn tabularis-database__open" href="/tabularis/open/<?= (int) $database['id'] ?>"
+            target="_blank" rel="noopener noreferrer"
+            aria-label="<?= $this->escape('Open ' . $database['name'] . ' in Tabularis (new tab)') ?>">Open in Tabularis ↗</a>
+    </li>
     <?php endforeach; ?>
-    </tbody>
-</table>
+</ul>
 <?php endif; ?>

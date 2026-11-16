@@ -60,3 +60,19 @@ def workspace_key(grant):
 def same_database(expected, actual):
     return all(expected.get(key) == actual.get(key) for key in
                ('id', 'name', 'driver', 'server_id', 'domain_id', 'host', 'port', 'owner'))
+
+
+def connection_params(database, username, password):
+    """Allow plain MySQL only on literal loopback; remote targets verify TLS identity."""
+    import ipaddress
+    try:
+        loopback = ipaddress.ip_address(database['host']).is_loopback
+    except ValueError:
+        loopback = False
+    if database['driver'] == 'mysql':
+        tls = 'disabled' if loopback else 'verify_identity'
+    else:
+        tls = 'prefer' if loopback else 'verify-full'
+    return {'driver': database['driver'], 'host': database['host'], 'port': database['port'],
+            'database': database['name'], 'username': username, 'password': password,
+            'read_only': False, 'ssl_mode': tls}

@@ -6,7 +6,7 @@ import json
 import unittest
 
 import common
-from tabularis_plesk.policy import Denied, verify_grant, workspace_key, same_database
+from tabularis_plesk.policy import Denied, verify_grant, workspace_key, same_database, connection_params
 
 
 def grant():
@@ -53,3 +53,13 @@ class PolicyTests(unittest.TestCase):
             value['databases'] = databases
             with self.assertRaises(Denied):
                 verify_grant(signed(value), b'private-key', now=1001)
+
+
+class DatabaseTransportPolicyTests(unittest.TestCase):
+    def test_only_literal_loopback_mysql_can_disable_tls(self):
+        database = {**grant()['databases'][0], 'driver': 'mysql'}
+        for host in ('127.0.0.1', '::1'):
+            self.assertEqual(connection_params({**database, 'host': host}, 'user', 'secret')['ssl_mode'], 'disabled')
+        for host in ('192.0.2.1', 'db.example.test', 'localhost.example.test'):
+            self.assertEqual(connection_params({**database, 'host': host}, 'user', 'secret')['ssl_mode'], 'verify_identity')
+        self.assertEqual(connection_params(grant()['databases'][0], 'user', 'secret')['ssl_mode'], 'prefer')

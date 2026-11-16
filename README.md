@@ -2,7 +2,9 @@
 
 Native Plesk Linux extension for MySQL, MariaDB and PostgreSQL. Work is proposed through unmerged pull requests; this is an evaluation implementation, not a released extension.
 
-The panel handles login and database permissions. A local broker starts independent, unprivileged Tabularis Web processes and provisions scoped database connections. An unprivileged gateway checks the current Plesk session on every HTTP request and periodically on established WebSockets.
+Open a database from the native Plesk database card’s expanded actions or from the responsive Tabularis page. The panel handles login and database permissions. A local broker starts independent, unprivileged Tabularis Web processes and provisions scoped database connections. An unprivileged gateway checks the current Plesk session on every HTTP request and periodically on established WebSockets.
+
+PostgreSQL supports reads/writes and object creation inside existing permitted schemas. Creating new schemas and altering/dropping objects owned by application accounts remain restricted. Remote PostgreSQL is rejected until a remote-host isolation adapter exists.
 
 Requirements: Plesk Obsidian 18.0.59+, Linux, panel PHP 8.1+, Python 3.10+, `python3-aiohttp`, systemd, and a pinned Tabularis Web build with the provisioning, managed-only and runtime-base-path changes. Initial integration is validated on Ubuntu 24.04 / Plesk 18.0.82. Other distributions require validation.
 

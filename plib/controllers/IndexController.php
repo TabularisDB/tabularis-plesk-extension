@@ -4,6 +4,7 @@ class IndexController extends pm_Controller_Action
     public function indexAction()
     {
         $this->view->pageTitle = 'Tabularis';
+        $this->view->headLink()->appendStylesheet(pm_Context::getBaseUrl() . 'styles/main.css');
         $this->view->configured = file_exists(pm_Context::getVarDir() . 'configured');
         $this->view->databases = [];
         $this->view->catalogError = false;

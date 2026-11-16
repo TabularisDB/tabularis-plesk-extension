@@ -17,7 +17,7 @@ import threading
 import time
 import urllib.request
 
-from .policy import Denied, verify_grant, workspace_key, same_database
+from .policy import Denied, verify_grant, workspace_key, same_database, connection_params
 from .provisioning import Provisioner
 from .transport import owns_connected_peer
 
@@ -155,10 +155,7 @@ class Supervisor:
                     self.credential('provision', database, username, password)
                     connections.append({'external_ref': f"plesk-db-{database['id']}",
                                         'name': database['domain'] + ' / ' + database['name'],
-                                        'params': {'driver': database['driver'], 'host': database['host'],
-                                                   'port': database['port'], 'database': database['name'],
-                                                   'username': username, 'password': password,
-                                                   'read_only': False}})
+                                        'params': connection_params(database, username, password)})
                 workspace['connections'] = Provisioner(workspace['port'], workspace['provisioning'], self.config['public_origin'], workspace['process'], workspace['uid']).reconcile(connections)
                 self.validate_catalogue(grant)
                 if workspace['cancelled'].is_set():
