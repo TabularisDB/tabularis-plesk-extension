@@ -11,15 +11,30 @@ results. Core and extension revisions are pinned separately below.
 | Tabularis core | `0d2a6a098f8369653b918d1e78d7f4eeeac65d8a` |
 | Core bundle | `a54eeee7a00638083a6b5284134883146a2eab656a645077ee83181cedd2d4a6` |
 | Core Linux binary | `4f9cd68bfeeaa0dab0c293760c1e7a812528aa9c23f0c0e2c2489506b93d109a` |
-| Plesk extension | `213ca5e5e29f450b04f5c5cb279033fcdb805f8a` |
-| Extension ZIP | `a8c6d8d0b377463ddaff6cf74ad1d9e803e22970dacc2a432050ca9acc6179a8` |
+| Plesk extension (UI/media capture) | `213ca5e5e29f450b04f5c5cb279033fcdb805f8a` |
+| Plesk extension (final gateway deployment) | `ee39af503a15391cc299933f428ad8540a8cb0db` |
+| Extension ZIP (UI/media capture) | `a8c6d8d0b377463ddaff6cf74ad1d9e803e22970dacc2a432050ca9acc6179a8` |
+| Extension ZIP (final gateway deployment) | `3db149d7163cc4e2d1382657df13be0649871432b346b6b4384e695002d7b298` |
 
-The 21 extension tests passed across the ordinary-user run (20 passed, one root
+The 23 extension tests passed across the ordinary-user run (22 passed, one root
 test skipped) and the real Plesk container's root-only test (one passed). That
 test keeps the legitimate child alive while a different UID replaces its TCP
 listener, and confirms that no token or database password reaches the replacement.
 PHP syntax checks covered all nine PHP files; Python/Bash syntax checks,
 `git diff --check`, and reproducible ZIP packaging also passed.
+
+## Final gateway follow-up
+
+PR #12 moves slow request-body reads inside the existing periodic authorization
+monitor. A raw HTTP regression starts an authorized upload, revokes permission,
+observes connection closure, then attempts the remaining bytes: zero requests
+reach the runtime. A separate ordinary POST test verifies the exact body and
+response. Both pass locally and with Python 3.12 / aiohttp 3.9.1 inside Plesk.
+Actual public browser SELECT 1 requests also pass for PostgreSQL and MariaDB on
+the installed follow-up ZIP. The public runtime verifier still denies other
+principals and independently closes a revoked WebSocket in 2.06 seconds.
+The UI is unchanged; the gallery and recording retain the explicit capture
+revision above.
 
 ## Environment
 
