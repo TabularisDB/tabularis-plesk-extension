@@ -22,6 +22,8 @@ The panel web server includes two extension-owned configuration files: `tabulari
 
 The evaluation runtime is pinned to core commit `0d2a6a098f8369653b918d1e78d7f4eeeac65d8a` ([PR #1579](https://github.com/TabularisDB/tabularis/pull/1579)), including runtime base paths from #1575, mandatory proxy credentials on every protected request from #1576, provisioning hardening from #1578 and browser-only community welcome dismissal from #1579. The verified binary SHA-256 is `4f9cd68bfeeaa0dab0c293760c1e7a812528aa9c23f0c0e2c2489506b93d109a`. All prerequisite PRs remain unmerged during evaluation.
 
+The final gateway deployment uses extension commit `ee39af503a15391cc299933f428ad8540a8cb0db` ([PR #12](https://github.com/TabularisDB/tabularis-plesk-extension/pull/12)), including permission rechecks during request-body uploads. Its ZIP SHA-256 is `3db149d7163cc4e2d1382657df13be0649871432b346b6b4384e695002d7b298`. [The lab report](../lab/VALIDATION.md) distinguishes this deployment from the unchanged UI capture revision.
+
 The provisioning contract is pinned to core [PR #1574](https://github.com/TabularisDB/tabularis/pull/1574), commit `6cbca5bcd583c4cc591880b087a3a624d103321e`, stacked on #1573 and #1528. Provisioning requests preserve the configured public Host and never send an Origin header.
 
 Each child receives independent `TABULARIS_WEB_PROXY_SECRET` and `TABULARIS_PROVISIONING_TOKEN` environment values. The broker uses:
@@ -35,7 +37,7 @@ External references are `plesk-db-<Plesk database ID>`. The gateway receives onl
 
 The child uses `--auth proxy --connection-mode managed-only --base-path /tabularis/w/<opaque-id>`. The gateway removes that external prefix before forwarding; the runtime applies it to asset URLs, frontend navigation and cookie paths. The current connection deep link is `/connections/<id>/editor` under that prefix.
 
-PostgreSQL workspaces can read/write tables, use sequences and create objects inside existing permitted schemas. They cannot create new schemas or ALTER/DROP existing application-owned objects. New schemas created separately by a database administrator require reopening a fresh workspace to recompute grants.
+PostgreSQL workspaces can read/write tables, use sequences and create objects inside existing permitted schemas. They cannot create new schemas or ALTER/DROP existing application-owned objects. After an administrator adds new schemas or external creator roles, sign out of Plesk and sign in again to create a fresh workspace and recompute grants. A new browser tab in the same panel session reuses the current workspace.
 
 ## Diagnosis and removal
 

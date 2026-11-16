@@ -45,4 +45,4 @@ Primary references: [Plesk session SDK](https://plesk.github.io/pm-api-stubs/doc
 
 ## Native database actions
 
-The supported `pm_Hook_SimpleList` hook augments only `database/list` rows that also appear in the current authorized catalogue. It preserves existing Plesk actions and adds `/tabularis/open/<database-id>`. Plesk 18.0.82 displays custom actions in each expanded database card. The compact ellipsis is implemented with fixed built-in actions and cannot be extended through this hook. No DOM injection or patching of Plesk assets is used.
+The supported [`pm_Hook_SimpleList`](https://plesk.github.io/pm-api-stubs/docs/classes/pm-Hook-SimpleList.html) hook augments only `database/list` rows that also appear in the current authorized catalogue. It preserves existing Plesk actions and adds `/tabularis/open/<database-id>`. Plesk 18.0.82 displays custom actions in each expanded database card. The compact ellipsis is implemented with fixed built-in actions and cannot be extended through this hook. No DOM injection or patching of Plesk assets is used.
