@@ -32,7 +32,7 @@ PHP syntax checks covered all nine PHP files; Python/Bash syntax checks,
   with the subscription's website through Plesk's supported CLI.
 - Each engine has 120 customers, 30 products, 360 orders and 1,080 order items.
   PostgreSQL also has 360 audit events, arrays, JSONB and identity sequences.
-- Host Apache verifies public TLS and forwards to loopback-only Docker ports.
+- Host Apache terminates public TLS and forwards to loopback-only Docker ports.
   Plesk trusts only the Docker gateway for the original client IP. Existing host
   sites and other Docker workloads were left intact.
 
