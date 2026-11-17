@@ -1,45 +1,57 @@
 # Presentation media
 
 These assets show real browser sessions in Plesk 18.0.82.3 on Ubuntu 24.04,
-against the synthetic PostgreSQL and MariaDB fixtures documented in
-[the lab validation report](../lab/VALIDATION.md). All captures use Tabularis
-core `0d2a6a098f8369653b918d1e78d7f4eeeac65d8a`.
+against the synthetic PostgreSQL and MariaDB fixtures documented in the
+[lab validation report](../lab/VALIDATION.md). The optional AI scenes use the
+separately pinned [scoped AI evaluation](../lab/AI_VALIDATION.md).
 
-The four screenshots and the recording's brief native Plesk card introduction
-were captured on 2026-11-16 with extension
-`213ca5e5e29f450b04f5c5cb279033fcdb805f8a`. The query-to-chart footage was
-captured on 2026-11-17 with deployed extension
-`ee39af503a15391cc299933f428ad8540a8cb0db`. The subsequent repository changes
-were documentation and presentation assets, not changes to the captured UI.
+The four screenshots and the brief native Plesk card introduction were captured
+on 2026-11-16 with core `0d2a6a098f8369653b918d1e78d7f4eeeac65d8a` and
+extension `213ca5e5e29f450b04f5c5cb279033fcdb805f8a`. The other non-AI scenes
+were captured on 2026-11-17 using the same core and deployed extension
+`ee39af503a15391cc299933f428ad8540a8cb0db`. The real SQL Editor AI sequence
+uses core `04a24593348246794ae002b0a69ad24e0d3f1f3b` and extension
+`d0913f3ea6590e9dd27649fea9456a8d2fc2c1b8`. Documentation and presentation
+changes do not alter the UI represented by those capture pins.
 
-The recording demonstrates actual SQL execution and chart generation:
+The overview demonstrates these actual interactions:
 
-- PostgreSQL: format and execute a country-revenue query, open its Bar chart,
-  maximize the chart and inspect country values.
-- MariaDB: aggregate order revenue by month, open the automatically selected
-  Line chart, then explicitly switch to Bar and back to Line. The six points
-  represent January through June 2026.
+- Open PostgreSQL from its native Plesk database card; browse the products grid
+  and sort prices in descending order.
+- Open query history, select a previous statement and execute it in a new console.
+- Name and execute a notebook SQL cell, add and preview Markdown notes, reorder
+  cells, Run All and open the Notebooks sidebar.
+- Run a customer/order join in the visual query builder, inspect and run
+  its generated SQL, then view five tables and four foreign-key relationships
+  in the schema diagram.
+- With administrator opt-in, generate SQL through the fixed OpenRouter model,
+  run it using a separate manual action and request an explanation in the SQL
+  Editor. Notebook AI and unrestricted agent tools are not enabled by this policy.
+- Format a PostgreSQL country-revenue query, open its Bar chart and inspect real
+  country values. In MariaDB, switch a monthly-revenue chart explicitly from Bar
+  to Line and inspect the six points for January through June 2026.
 
 The decorative window frame and background follow the Tabularis governance
-release-media tools. The video uses a fixed decorative Safari-style frame with a
-local address bar; the browser capture itself is neither Safari nor macOS. Eased
-camera moves crop into the real application content to follow SQL entry, Run and
-chart controls. Full application views establish orientation before and after
-close-ups; complete charts retain their axes, labels and values during inspection.
-The new source footage retains its original 2880×1800 resolution through the
-content zooms. Rehearsal, page-loading and idle waits are removed in the montage;
-the sequence of demonstrated interactions and the query results are unchanged.
+release-media tools. The video uses a fixed Safari-style frame with a local
+address bar; the capture itself is a Linux browser, neither Safari nor macOS.
+Eased camera moves follow the real application controls, preserving full views
+before and after close-ups. Complete charts retain their axes, labels and values.
+The original 2880×1800 capture detail is retained through content zooms.
+Rehearsal, loading and idle waits are removed; actions and query results are real.
+The grid sequence demonstrates descending price sorting.
 
 Screenshots retain the real panel content. The MP4, GIF and poster replace public
-addresses and domain identifiers with `plesk.tabularis.local` and
-`test.tabularis.local` before framing or zooming. The narrow PostgreSQL Explorer
-label uses a natural ellipsis; the full local site name remains in the decorative
-tab title. No login, password, session cookie or API token is shown.
+addresses and domain labels with `plesk.tabularis.local` and
+`test.tabularis.local` before framing or zooming. A narrow Explorer label may use
+a natural ellipsis; the full local site name remains in the decorative tab title.
+No login, password, session cookie or provider key is shown.
 
-The MP4 is 40.8 seconds at 1920×1280 and 60 fps, with no audio. The looping GIF
-contains the same edit at 960×640 and 12 fps. The JPEG poster shows the complete
-PostgreSQL Bar chart without a tooltip covering the data.
+The MP4 is 86.27 seconds at 1920×1280 and 60 fps, without audio; the
+looping GIF mirrors the same edit at 960×640 and 12 fps. The retained JPEG poster
+shows a complete PostgreSQL Bar chart from the same November 17 chart capture,
+without a tooltip covering the data.
 
-Only final PNG screenshots, the sanitized MP4/GIF and their JPEG poster belong here.
-Private source footage and the separate English/Italian PDF reports stay outside
-Git. The source footage must not be copied into a public branch or release.
+Only final PNG screenshots, the sanitized MP4/GIF and their JPEG poster belong
+here. Private source footage, rendering scripts and separate English/Italian PDF
+reports stay outside Git. Source recordings must not be copied to a public branch
+or release.

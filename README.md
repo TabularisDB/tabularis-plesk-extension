@@ -64,9 +64,9 @@ Captured from the actual Plesk lab and live Tabularis editors, using sample data
 
 [![Real PostgreSQL bar chart in the Plesk database workflow](assets/videos/plesk-database-workflow.jpg)](assets/videos/plesk-database-workflow.mp4)
 
-[Watch the Plesk → SQL → charts workflow](assets/videos/plesk-database-workflow.mp4) · [View the GIF](assets/videos/plesk-database-workflow.gif). Run real PostgreSQL and MariaDB queries, visualize country revenue as bars, and switch monthly revenue between Bar and Line charts.
+[Watch the 86-second Plesk → Tabularis overview](assets/videos/plesk-database-workflow.mp4) · [View the GIF](assets/videos/plesk-database-workflow.gif). Browse and sort data, revisit query history, combine SQL and Markdown in notebooks, build visual joins, inspect relationships, and create PostgreSQL and MariaDB charts. The real SQL Editor AI scene shows administrator-enabled generation, a separate manual Run, and explanation; see [the scoped AI policy](docs/ai.md).
 
-Eased close-ups follow the SQL and chart controls, returning to complete chart views with their axes and values. The Safari-style frame is decorative; the recording comes from a Linux browser. Public identifiers use the local demo labels `plesk.tabularis.local` and `test.tabularis.local`. Rehearsal and idle waits are removed; actual interactions and query results are unchanged. See [capture notes](assets/README.md).
+Eased close-ups follow the actual controls and return to full views, preserving complete chart axes and values. The Safari-style frame is decorative; the recording comes from a Linux browser. Public identifiers use the local demo labels `plesk.tabularis.local` and `test.tabularis.local`. Rehearsal and idle waits are removed; actual interactions and query results are unchanged. See [capture notes](assets/README.md).
 
 ## Requirements and Configuration
 
