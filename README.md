@@ -62,7 +62,7 @@ Captured from the actual Plesk lab and live Tabularis editors, using sample data
 
 ## Video
 
-[![Real WooCommerce best-selling-products bar chart in Tabularis](assets/videos/woocommerce-workflow.jpg)](assets/videos/woocommerce-workflow.mp4)
+[![Continuous WooCommerce workflow in Plesk and Tabularis](assets/videos/woocommerce-workflow.gif)](assets/videos/woocommerce-workflow.mp4)
 
 [Watch the 86-second continuous WooCommerce workflow](assets/videos/woocommerce-workflow.mp4) · [View the GIF](assets/videos/woocommerce-workflow.gif). Open a real WooCommerce database from its Plesk card, close the initial empty Console, explore orders and stock, run saved queries, and chart best sellers. Generate SQL with administrator-enabled AI, run it manually, inspect daily order value and this session's history, then create and run a notebook with Markdown and SQL. See [the scoped AI policy](docs/ai.md).
 
