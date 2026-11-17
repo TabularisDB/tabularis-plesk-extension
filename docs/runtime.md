@@ -1,5 +1,9 @@
 # Runtime installation and upgrades
 
+SQL assistance is optional and disabled on new installations. With a compatible
+core build, an administrator can supply `--ai-config-file` for a protected provider
+and explicit database/schema allowlist. See [AI configuration and rotation](ai.md).
+
 Install the ZIP first, then provide a locally built, pinned Tabularis Web binary and built frontend assets. This extension does not download or execute an arbitrary latest release. Required core changes are tracked in [#1273](https://github.com/TabularisDB/tabularis/issues/1273), [#1274](https://github.com/TabularisDB/tabularis/issues/1274) and [#1572](https://github.com/TabularisDB/tabularis/issues/1572). The evaluation lab records the actual unmerged commit SHAs.
 
 On the Plesk host as root:

@@ -40,6 +40,7 @@ The extension resolves database access from Plesk, starts a separate unprivilege
 - **MySQL, MariaDB and PostgreSQL** — Browse schemas, tables and views, run queries and edit data with dedicated scoped accounts.
 - **Separate workspaces** — Different panel sessions or effective permissions get separate Unix users, processes, connection stores and secrets. Tabularis never runs as root.
 - **Managed connections** — Plesk supplies the server-controlled catalogue through Tabularis’s protected provisioning API. Browser users cannot add arbitrary connections.
+- **Optional SQL assistance** — An administrator can enable a fixed AI provider/model for explicit database/schema grants. Provider secrets stay in private runtime files. [Configuration and lifecycle](docs/ai.md).
 - **Live revocation** — Fresh requests check current permissions; active HTTP and WebSocket streams are rechecked every two seconds. Failed authorization closes the stream before account cleanup.
 - **Native services** — A small broker and gateway run under systemd. No nested Docker installation or Docker socket access is required.
 - **Deliberate lifecycle** — Idle workspaces expire, generated accounts are revoked and failed cleanup remains in protected recovery journals. Application passwords are unchanged.

@@ -20,6 +20,7 @@ import urllib.request
 from .policy import Denied, verify_grant, workspace_key, same_database, connection_params
 from .provisioning import Provisioner
 from .transport import owns_connected_peer
+from .ai import ManagedAI
 
 
 def atomic_json(path, value, mode=0o600):
@@ -55,6 +56,7 @@ class Supervisor:
         self.workspaces = {}
         self.lock = threading.RLock()
         self.recover()
+        self.ai = ManagedAI.load(config.get('ai_config_file'))
 
     def recover(self):
         # systemd KillMode=control-group terminates descendants on service restart.
@@ -201,15 +203,24 @@ class Supervisor:
         environment['PYTHONPATH'] = str(Path(__file__).resolve().parents[1])
         memory = self.config.get('workspace_memory_mb', 8192) * 1024 * 1024
         launch = ['/usr/bin/python3', '-m', 'tabularis_plesk.runner', str(user.pw_uid), str(user.pw_gid), str(memory)]
-        process = subprocess.Popen(launch + command, env=environment, cwd=home, stdin=subprocess.DEVNULL,
-                                   stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
-                                   start_new_session=True)
         workspace = {'id': identifier, 'session': grant['session'], 'identity': grant['identity'],
                      'port': port, 'proxy_secret': proxy_secret, 'provisioning': provisioning,
-                     'process': process, 'used': time.monotonic(), 'connections': {},
+                     'used': time.monotonic(), 'connections': {},
                      'credentials': [], 'ready': False, 'uid': user.pw_uid, 'account': account,
                      'cancelled': threading.Event()}
+        # Journal the account before writing provider secrets or starting the
+        # process, so a failed launch cannot leave untracked private state.
         self.journal(workspace)
+        try:
+            if self.ai is not None:
+                environment.update(self.ai.install(home, grant['databases'], user.pw_uid, user.pw_gid))
+            process = subprocess.Popen(launch + command, env=environment, cwd=home, stdin=subprocess.DEVNULL,
+                                       stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+                                       start_new_session=True)
+        except Exception:
+            self.cleanup(workspace)
+            raise Denied('Tabularis runtime preparation failed') from None
+        workspace['process'] = process
         for _ in range(100):
             if process.poll() is not None:
                 self.cleanup(workspace)
