@@ -62,9 +62,11 @@ Captured from the actual Plesk lab and live Tabularis editors, using sample data
 
 ## Video
 
-[![Plesk database workflow video](assets/videos/plesk-database-workflow.jpg)](assets/videos/plesk-database-workflow.mp4)
+[![Real PostgreSQL bar chart in the Plesk database workflow](assets/videos/plesk-database-workflow.jpg)](assets/videos/plesk-database-workflow.mp4)
 
-[Watch the Plesk → Tabularis database workflow](assets/videos/plesk-database-workflow.mp4) · [View the GIF](assets/videos/plesk-database-workflow.gif). The recording uses the real panel and editors with a decorative Safari-style window frame; it is not a Safari or macOS capture. Public identifiers are replaced with the local demo labels `plesk.tabularis.local` and `test.tabularis.local`; the full application viewport and query results remain visible during eased window movements. Long loading waits are shortened.
+[Watch the Plesk → SQL → charts workflow](assets/videos/plesk-database-workflow.mp4) · [View the GIF](assets/videos/plesk-database-workflow.gif). Run real PostgreSQL and MariaDB queries, visualize country revenue as bars, and switch monthly revenue between Bar and Line charts.
+
+Eased close-ups follow the SQL and chart controls, returning to complete chart views with their axes and values. The Safari-style frame is decorative; the recording comes from a Linux browser. Public identifiers use the local demo labels `plesk.tabularis.local` and `test.tabularis.local`. Rehearsal and idle waits are removed; actual interactions and query results are unchanged. See [capture notes](assets/README.md).
 
 ## Requirements and Configuration
 
