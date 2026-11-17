@@ -22,6 +22,12 @@ also have no group or other read access; use directory mode `0700` and file mode
 rejected. The package must contain a root `.tabularium` manifest file; only that
 manifest and an optional `LICENSE` are installed in runtime homes.
 
+The pinned core's built-in provider recipes can take precedence over installed
+manifests, including for `openrouter`. Copying a provider ZIP provides a uniform
+deployment layout; it does not override a built-in request recipe. Review the
+pinned core as well as the package. Endpoint settings apply only when supported
+by the selected provider's effective recipe.
+
 Example `/etc/tabularis-plesk/ai/operator.json`:
 
 ```json
