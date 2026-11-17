@@ -1,5 +1,72 @@
 # Presentation media
 
+## Continuous WooCommerce workflow
+
+[`videos/woocommerce-workflow.mp4`](videos/woocommerce-workflow.mp4), its
+[matching GIF](videos/woocommerce-workflow.gif) and
+[JPEG poster](videos/woocommerce-workflow.jpg) show one continuous browser take
+recorded on 2026-11-17. The source runs for 85.734067 seconds at normal speed;
+the constant-frame-rate export is 85.73 seconds. No loading waits, actions or
+idle intervals were removed, and no other take was inserted.
+
+The real Plesk 18.0.82.3 lab on Ubuntu 24.04 runs WordPress 7.1.4,
+WooCommerce 11.3.0 and Storefront 4.6.2 in English. The launch was recorded in
+Plesk’s administrator view. The shop is installed under
+`/coffee/`, with HPOS enabled in the MariaDB database `tabularis_woocommerce`
+and the `wp_` table prefix. Its 24 products, 300 orders and nine separate refund
+records are synthetic fixtures created through WooCommerce APIs. Completed and
+processing orders total EUR 14,185.03; the chart reports gross order value for
+those statuses, not net revenue.
+
+The capture uses core `04a24593348246794ae002b0a69ad24e0d3f1f3b` and deployed
+extension `d0913f3ea6590e9dd27649fea9456a8d2fc2c1b8`. Scoped AI requires the
+unmerged [core PR #1595](https://github.com/TabularisDB/tabularis/pull/1595);
+the extension-side policy is already merged. The wider authorization and
+PostgreSQL/MariaDB checks are recorded in the existing
+[lab validation report](../lab/VALIDATION.md) and
+[AI evaluation](../lab/AI_VALIDATION.md). This media update changes no runtime
+behavior and does not claim a new authorization-boundary test run.
+
+The uninterrupted sequence shows:
+
+- Launch the WooCommerce database from its native Plesk card. A default empty
+  Console appears and is visibly closed; there is no SQL or result data at entry.
+- Open `wp_wc_orders`, sort newest first, and inspect the product stock table.
+- Load and run the prepared **Orders to Fulfill** and **Best-Selling Products**
+  saved queries; maximize the real five-product Bar chart, inspect the first
+  product’s 183 ordered units, and restore the SQL editor.
+- Open a new console and ask SQL Editor AI for daily EUR order totals. The
+  administrator-selected OpenRouter model `openai/gpt-5.4-mini` returns actual
+  SQL, followed by a separate manual Run. Its 15 daily results are shown as a
+  Line chart, then history accumulated during this same session is opened.
+- Create **Weekend Campaign Review**, add and preview a Markdown note, place
+  it above the SQL cell, paste the generated query, and choose Run All. The
+  notebook returns the same 15 daily rows and reports one successful SQL cell.
+
+Four saved queries were prepared ahead of time; none is open at entry.
+Rehearsal tabs, history and notebooks in this workspace were cleared before
+recording. Editor input uses normal typing and a standard paste into the real
+editor model. The native Plesk action's link target was changed to the same tab
+solely to permit one uninterrupted tab capture; its authenticated launch URL and behavior were
+retained. No query results or application screens were fabricated.
+
+The fixed Safari-style frame and background are decorative; the recording
+comes from a Linux browser. Native 2880×1800 pixels are retained through domain
+replacement and gentle camera moves. Plesk heading/card and Explorer domain
+labels are replaced with `test.tabularis.local`; the decorative address bar uses
+`plesk.tabularis.local`. The Plesk footer is below the captured viewport. A
+briefly narrow Explorer label uses an ellipsis. Domain replacement happens before
+zooming. No public URL, login screen, password, session cookie or provider key
+appears in these three deliverables.
+
+The MP4 is 1920×1280 at 60 fps, without audio, with fast-start metadata. Its
+looping GIF mirrors the same continuous edit at 960×640 and 12 fps. The poster
+shows the complete, settled best-selling-products Bar chart at 35.2 seconds
+from this same capture, with no tooltip covering data. Complete chart axes and
+labels remain visible, including every date on the daily Line chart.
+
+## Earlier Plesk overview and screenshots
+
 These assets show real browser sessions in Plesk 18.0.82.3 on Ubuntu 24.04,
 against the synthetic PostgreSQL and MariaDB fixtures documented in the
 [lab validation report](../lab/VALIDATION.md). The optional AI scenes use the
