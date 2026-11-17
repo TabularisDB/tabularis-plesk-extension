@@ -35,7 +35,7 @@ The extension resolves database access from Plesk, starts a separate unprivilege
 
 ## Features
 
-- **Native database actions** — “Open in Tabularis” appears in each authorized database card’s expanded actions. A responsive Tabularis panel page also lists accessible databases.
+- **Native database actions** — “Open in Tabularis” appears in each authorized database card’s expanded actions and opens a new browser tab, keeping Plesk available. A responsive Tabularis panel page also lists accessible databases.
 - **Plesk sign-in** — The current panel session controls every request; no second password form or credentials in launch URLs.
 - **MySQL, MariaDB and PostgreSQL** — Browse schemas, tables and views, run queries and edit data with dedicated scoped accounts.
 - **Separate workspaces** — Different panel sessions or effective permissions get separate Unix users, processes, connection stores and secrets. Tabularis never runs as root.
@@ -62,7 +62,7 @@ Captured from the actual Plesk lab and live Tabularis editors, using sample data
 
 ## Video
 
-[![Continuous WooCommerce workflow in Plesk and Tabularis](assets/videos/woocommerce-workflow.gif)](assets/videos/woocommerce-workflow.mp4)
+[![Watch the continuous WooCommerce workflow in Plesk and Tabularis](assets/videos/woocommerce-workflow-preview.gif)](assets/videos/woocommerce-workflow.mp4)
 
 [Watch the 86-second continuous WooCommerce workflow](assets/videos/woocommerce-workflow.mp4) · [View the GIF](assets/videos/woocommerce-workflow.gif). Open a real WooCommerce database from its Plesk card, close the initial empty Console, explore orders and stock, run saved queries, and chart best sellers. Generate SQL with administrator-enabled AI, run it manually, inspect daily order value and this session's history, then create and run a notebook with Markdown and SQL. See [the scoped AI policy](docs/ai.md).
 
@@ -165,7 +165,7 @@ The security suite covers signed assertions, session isolation, forged headers, 
 
 Database-only Plesk subusers need internal session permission APIs in addition to the public SDK. The adapter is tested on Plesk 18.0.82 and fails closed if identity or permissions cannot be verified. Other distributions and Plesk versions need validation.
 
-Plesk 18.0.82 displays custom actions in expanded database cards. Its compact ellipsis contains fixed built-in actions and offers no supported insertion hook; this extension does not inject or patch Plesk’s DOM.
+Plesk 18.0.82 displays custom actions in expanded database cards. Its compact ellipsis contains fixed built-in actions and offers no supported insertion hook. The extension uses Plesk’s ContentInclude hook to add new-tab attributes only to its own launch links because modern cards omit the action’s `newWindow` property. Plesk’s built-in actions are unchanged.
 
 The lab’s bundled license permits one customer and one domain. Real second-tenant transfers, reseller impersonation, additional domains and remote servers need further licensed integration coverage. Workspace history is ephemeral. PostgreSQL objects created by a workspace are retained under an unprivileged NOLOGIN owner during cleanup; ownership is never transferred to an administrator.
 

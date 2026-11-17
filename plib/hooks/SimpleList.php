@@ -27,9 +27,10 @@ class Modules_Tabularis_SimpleList extends pm_Hook_SimpleList
                 'id' => 'tabularis-open-' . $id,
                 'name' => 'tabularis-open',
                 'title' => 'Open in Tabularis',
-                'hint' => 'Open this database using your current Plesk permissions',
+                'hint' => 'Open this database in a new tab using your current Plesk permissions',
                 'icon' => pm_Context::getBaseUrl() . 'images/tabularis.png',
                 'href' => '/tabularis/open/' . $id,
+                'newWindow' => true,
             ];
         }
         unset($row);

@@ -132,3 +132,28 @@ AI/SSH services remain outside the restricted database session's authority.
 Original screenshots and the raw recording are kept outside Git. The published
 video must remove public URLs and domain labels before decorative framing. No
 login, password, cookie, grant or API token is included in the captured scenes.
+
+## Native new-tab actions — 2026-11-17
+
+The updated extension ZIP was installed on the Plesk 18.0.82.3 lab. Its SHA256
+is `d5bc79db8bf714c89f2b6c811667b82fe4606b293639e9b4e7e9be00f6590d7b`.
+Broker and gateway remained active; their configuration was not changed.
+
+The modern database-card renderer omits the action's `newWindow` property.
+The [ContentInclude hook](https://plesk.github.io/pm-api-stubs/docs/classes/pm_Hook_ContentInclude.html)
+loads a script that decorates only exact relative `/tabularis/open/<numeric-id>`
+anchors with `_blank`, `noopener` and `noreferrer`. It observes newly rendered
+links and href changes without intercepting clicks or changing built-in actions.
+
+After a fresh page load, the actual PostgreSQL and MariaDB card actions each
+opened a new browser tab with the correct database and a mounted SQL editor.
+The original Plesk tab stayed on its database list and both new tabs had a null
+`window.opener`. All three database actions carried the new-tab attributes;
+built-in connection/export/import/copy links remained unchanged. A temporary
+browser fixture also verified dynamic links and href updates, while external
+URLs, nonnumeric IDs, query-string variants and unrelated links were untouched.
+The fixture and owned test tabs were removed afterwards.
+
+Validation passed: 38 Python tests with one expected non-root cross-UID skip,
+11 PHP/PHTML syntax checks, JavaScript syntax and deterministic packaging.
+This follow-up checks navigation; the earlier SQL/grant evidence remains separate.
