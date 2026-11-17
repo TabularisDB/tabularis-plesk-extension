@@ -56,6 +56,10 @@ def main():
     parser.add_argument('--web-root', type=Path, required=True)
     parser.add_argument('--public-origin', required=True)
     parser.add_argument('--max-workspaces', type=int, default=8)
+    ai = parser.add_mutually_exclusive_group()
+    ai.add_argument('--ai-config-file', type=Path,
+                    help='Root-only operator JSON for scoped SQL assistance; disabled on new installs by default')
+    ai.add_argument('--disable-ai', action='store_true', help='Remove a previously enabled AI integration')
     parser.add_argument('--trusted-panel-proxy', action='append', default=[],
                         help='Exact trusted reverse-proxy IP; pair with Plesk panel realIpFrom')
     args = parser.parse_args()
@@ -84,6 +88,18 @@ def main():
     help_output = subprocess.run([str(binary), 'web', '--help'], capture_output=True, text=True, check=True).stdout
     if '--base-path' not in help_output or '--connection-mode' not in help_output:
         parser.error('The pinned runtime lacks required base-path or managed-only support')
+    previous = json.loads((CONFIG / 'config.json').read_text()) if (CONFIG / 'config.json').exists() else {}
+    ai_file = None if args.disable_ai else args.ai_config_file or previous.get('ai_config_file')
+    if ai_file is not None:
+        if 'TABULARIS_WEB_AI_CONFIG_FILE' not in help_output:
+            parser.error('The pinned runtime lacks scoped AI configuration support')
+        sys.path.insert(0, str(MODULE / 'broker'))
+        from tabularis_plesk.ai import ManagedAI
+        from tabularis_plesk.policy import Denied
+        try:
+            ManagedAI.load(str(ai_file))
+        except Denied as error:
+            parser.error(str(error))
     try:
         gateway = pwd.getpwnam('tabularis-gateway')
     except KeyError:
@@ -109,8 +125,9 @@ def main():
                 'idle_seconds': 900, 'workspace_memory_mb': 8192,
                 'trusted_panel_proxies': args.trusted_panel_proxy,
                 'plesk_php': '/usr/local/psa/admin/bin/php', 'credential_helper': str(MODULE / 'credentials.php')}
-    if (CONFIG / 'config.json').exists():
-        previous = json.loads((CONFIG / 'config.json').read_text())
+    if ai_file is not None:
+        settings['ai_config_file'] = str(ai_file)
+    if previous:
         if previous != settings:
             write(CONFIG / 'config.previous.json', json.dumps(previous, indent=2))
     write(CONFIG / 'config.json', json.dumps(settings, indent=2))
