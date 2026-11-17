@@ -10,8 +10,29 @@ the constant-frame-rate export is 85.73 seconds. No loading waits, actions or
 idle intervals were removed, and no other take was inserted.
 
 The README embeds a smaller [GIF preview](videos/woocommerce-workflow-preview.gif)
-of the same complete sequence at 640×427 and 6 fps (about 9 MB). Clicking it
-opens the full-quality MP4. The original 960×640 GIF remains available separately.
+edited from that same recording: 25.01 seconds at 640×427 and 8 fps, with
+128 colors (4,155,637 bytes, about 4.2 MB). It removes loading and idle waits
+and accelerates selected actions. Clicking it opens the unchanged full-quality
+MP4 at normal speed. The original full-length 960×640 GIF remains available
+separately.
+
+The preview uses the following source intervals in order. Times refer to
+`woocommerce-workflow.mp4`; the playback speed applies only to the preview.
+
+| Source interval (seconds) | Playback speed | Highlight |
+| --- | --- | --- |
+| 0.0–2.6 | 1× | Native Plesk database action |
+| 8.2–13.3 | 1.5× | Open and sort WooCommerce orders |
+| 23.0–26.6 | 1.5× | Run the saved fulfillment query |
+| 28.0–36.0 | 2× | Best-selling products and Bar chart |
+| 41.0–43.0 | 1× | SQL Editor AI prompt |
+| 48.0–56.0 | 2× | Generated SQL, manual execution and Line chart |
+| 68.0–72.0 | 2× | Notebook Markdown and SQL cells |
+| 73.5–82.7 | 2× | Run the notebook and inspect results |
+
+The preview loops and uses a shared palette with ordered Bayer dithering.
+Only timing, scene selection, scaling and GIF color conversion differ from
+the sanitized MP4; no application UI or query results were added.
 
 The real Plesk 18.0.82.3 lab on Ubuntu 24.04 runs WordPress 7.1.4,
 WooCommerce 11.3.0 and Storefront 4.6.2 in English. The launch was recorded in

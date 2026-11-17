@@ -62,11 +62,13 @@ Captured from the actual Plesk lab and live Tabularis editors, using sample data
 
 ## Video
 
-[![Watch the continuous WooCommerce workflow in Plesk and Tabularis](assets/videos/woocommerce-workflow-preview.gif)](assets/videos/woocommerce-workflow.mp4)
+[![25-second WooCommerce highlights in Plesk and Tabularis; click to watch the full video](assets/videos/woocommerce-workflow-preview.gif)](assets/videos/woocommerce-workflow.mp4)
 
-[Watch the 86-second continuous WooCommerce workflow](assets/videos/woocommerce-workflow.mp4) · [View the GIF](assets/videos/woocommerce-workflow.gif). Open a real WooCommerce database from its Plesk card, close the initial empty Console, explore orders and stock, run saved queries, and chart best sellers. Generate SQL with administrator-enabled AI, run it manually, inspect daily order value and this session's history, then create and run a notebook with Markdown and SQL. See [the scoped AI policy](docs/ai.md).
+[Watch the full 86-second video](assets/videos/woocommerce-workflow.mp4) · [View the 25-second GIF preview](assets/videos/woocommerce-workflow-preview.gif) · [View the full-length GIF](assets/videos/woocommerce-workflow.gif).
 
-This is one uninterrupted take at normal speed, including loading and query waits. Gentle close-ups preserve complete charts inside a fixed decorative Safari-style frame; the actual capture is a Linux browser. Public domain labels are replaced with `plesk.tabularis.local` and `test.tabularis.local`. The shop contains synthetic products, customers and orders created through WooCommerce's APIs; UI, provider responses and query results are real. See [capture notes](assets/README.md#continuous-woocommerce-workflow).
+The preview shows selected highlights with waits removed and some actions accelerated. Click it to watch the complete workflow at normal speed. The full video shows how to open a real WooCommerce database from its Plesk card, close the initial empty Console, explore orders and stock, run saved queries, and chart best sellers. Generate SQL with administrator-enabled AI, run it manually, inspect daily order value and this session's history, then create and run a notebook with Markdown and SQL. See [the scoped AI policy](docs/ai.md).
+
+The full video is one uninterrupted take at normal speed, including loading and query waits. Gentle close-ups preserve complete charts inside a fixed decorative Safari-style frame; the actual capture is a Linux browser. Public domain labels are replaced with `plesk.tabularis.local` and `test.tabularis.local`. The shop contains synthetic products, customers and orders created through WooCommerce's APIs; UI, provider responses and query results are real. See [capture notes](assets/README.md#continuous-woocommerce-workflow).
 
 The [earlier 86-second Plesk overview](assets/videos/plesk-database-workflow.mp4) ([GIF](assets/videos/plesk-database-workflow.gif)) also covers PostgreSQL and MariaDB, the visual query builder, schema relationships and AI explanation. Its separate [capture notes](assets/README.md#earlier-plesk-overview-and-screenshots) describe that edited overview.
 
