@@ -62,11 +62,13 @@ Captured from the actual Plesk lab and live Tabularis editors, using sample data
 
 ## Video
 
-[![Real PostgreSQL bar chart in the Plesk database workflow](assets/videos/plesk-database-workflow.jpg)](assets/videos/plesk-database-workflow.mp4)
+[![Continuous WooCommerce workflow in Plesk and Tabularis](assets/videos/woocommerce-workflow.gif)](assets/videos/woocommerce-workflow.mp4)
 
-[Watch the 86-second Plesk → Tabularis overview](assets/videos/plesk-database-workflow.mp4) · [View the GIF](assets/videos/plesk-database-workflow.gif). Browse and sort data, revisit query history, combine SQL and Markdown in notebooks, build visual joins, inspect relationships, and create PostgreSQL and MariaDB charts. The real SQL Editor AI scene shows administrator-enabled generation, a separate manual Run, and explanation; see [the scoped AI policy](docs/ai.md).
+[Watch the 86-second continuous WooCommerce workflow](assets/videos/woocommerce-workflow.mp4) · [View the GIF](assets/videos/woocommerce-workflow.gif). Open a real WooCommerce database from its Plesk card, close the initial empty Console, explore orders and stock, run saved queries, and chart best sellers. Generate SQL with administrator-enabled AI, run it manually, inspect daily order value and this session's history, then create and run a notebook with Markdown and SQL. See [the scoped AI policy](docs/ai.md).
 
-Eased close-ups follow the actual controls and return to full views, preserving complete chart axes and values. The Safari-style frame is decorative; the recording comes from a Linux browser. Public identifiers use the local demo labels `plesk.tabularis.local` and `test.tabularis.local`. Rehearsal and idle waits are removed; actual interactions and query results are unchanged. See [capture notes](assets/README.md).
+This is one uninterrupted take at normal speed, including loading and query waits. Gentle close-ups preserve complete charts inside a fixed decorative Safari-style frame; the actual capture is a Linux browser. Public domain labels are replaced with `plesk.tabularis.local` and `test.tabularis.local`. The shop contains synthetic products, customers and orders created through WooCommerce's APIs; UI, provider responses and query results are real. See [capture notes](assets/README.md#continuous-woocommerce-workflow).
+
+The [earlier 86-second Plesk overview](assets/videos/plesk-database-workflow.mp4) ([GIF](assets/videos/plesk-database-workflow.gif)) also covers PostgreSQL and MariaDB, the visual query builder, schema relationships and AI explanation. Its separate [capture notes](assets/README.md#earlier-plesk-overview-and-screenshots) describe that edited overview.
 
 ## Requirements and Configuration
 
