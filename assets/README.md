@@ -9,6 +9,10 @@ recorded on 2026-11-17. The source runs for 85.734067 seconds at normal speed;
 the constant-frame-rate export is 85.73 seconds. No loading waits, actions or
 idle intervals were removed, and no other take was inserted.
 
+The README embeds a smaller [GIF preview](videos/woocommerce-workflow-preview.gif)
+of the same complete sequence at 640×427 and 6 fps (about 9 MB). Clicking it
+opens the full-quality MP4. The original 960×640 GIF remains available separately.
+
 The real Plesk 18.0.82.3 lab on Ubuntu 24.04 runs WordPress 7.1.4,
 WooCommerce 11.3.0 and Storefront 4.6.2 in English. The launch was recorded in
 Plesk’s administrator view. The shop is installed under
