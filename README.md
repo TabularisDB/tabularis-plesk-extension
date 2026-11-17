@@ -16,7 +16,7 @@ A native [Plesk](https://www.plesk.com/) Linux extension for [Tabularis](https:/
 
 The extension resolves database access from Plesk, starts a separate unprivileged Tabularis Web workspace for each session and effective catalogue, and provisions dedicated database accounts without changing application passwords.
 
-> **Evaluation implementation, not a released extension.** The required core changes remain in open, unmerged pull requests. Installation requires a pinned Tabularis Web build with managed connections, provisioning, runtime base paths and per-request proxy authentication. See [runtime installation](docs/runtime.md) for the tested revision and contract.
+> **Evaluation implementation, not a released extension.** The base runtime prerequisites are available in core `main`; optional scoped AI currently requires [core PR #1595](https://github.com/TabularisDB/tabularis/pull/1595), which remains unmerged. Installation requires a pinned Tabularis Web build with managed connections, provisioning, runtime base paths and per-request proxy authentication. See [runtime installation](docs/runtime.md) for the tested revisions and contract.
 
 ## Table of Contents
 
@@ -40,7 +40,7 @@ The extension resolves database access from Plesk, starts a separate unprivilege
 - **MySQL, MariaDB and PostgreSQL** — Browse schemas, tables and views, run queries and edit data with dedicated scoped accounts.
 - **Separate workspaces** — Different panel sessions or effective permissions get separate Unix users, processes, connection stores and secrets. Tabularis never runs as root.
 - **Managed connections** — Plesk supplies the server-controlled catalogue through Tabularis’s protected provisioning API. Browser users cannot add arbitrary connections.
-- **Optional SQL assistance** — An administrator can enable a fixed AI provider/model for explicit database/schema grants. Provider secrets stay in private runtime files. [Configuration and lifecycle](docs/ai.md).
+- **Optional SQL assistance** — An administrator can enable a fixed AI provider/model in the SQL Editor for explicit database/schema grants. Provider secrets stay in private runtime files. [Configuration and lifecycle](docs/ai.md).
 - **Live revocation** — Fresh requests check current permissions; active HTTP and WebSocket streams are rechecked every two seconds. Failed authorization closes the stream before account cleanup.
 - **Native services** — A small broker and gateway run under systemd. No nested Docker installation or Docker socket access is required.
 - **Deliberate lifecycle** — Idle workspaces expire, generated accounts are revoked and failed cleanup remains in protected recovery journals. Application passwords are unchanged.

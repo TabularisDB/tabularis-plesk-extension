@@ -4,7 +4,7 @@ SQL assistance is optional and disabled on new installations. With a compatible
 core build, an administrator can supply `--ai-config-file` for a protected provider
 and explicit database/schema allowlist. See [AI configuration and rotation](ai.md).
 
-Install the ZIP first, then provide a locally built, pinned Tabularis Web binary and built frontend assets. This extension does not download or execute an arbitrary latest release. Required core changes are tracked in [#1273](https://github.com/TabularisDB/tabularis/issues/1273), [#1274](https://github.com/TabularisDB/tabularis/issues/1274) and [#1572](https://github.com/TabularisDB/tabularis/issues/1572). The evaluation lab records the actual unmerged commit SHAs.
+Install the ZIP first, then provide a locally built, pinned Tabularis Web binary and built frontend assets. This extension does not download or execute an arbitrary latest release. Required core changes are tracked in [#1273](https://github.com/TabularisDB/tabularis/issues/1273), [#1274](https://github.com/TabularisDB/tabularis/issues/1274) and [#1572](https://github.com/TabularisDB/tabularis/issues/1572). The evaluation lab records exact tested commit SHAs.
 
 On the Plesk host as root:
 
@@ -24,9 +24,9 @@ The panel web server includes two extension-owned configuration files: `tabulari
 
 ## Provisioning contract
 
-The evaluation runtime is pinned to core commit `0d2a6a098f8369653b918d1e78d7f4eeeac65d8a` ([PR #1579](https://github.com/TabularisDB/tabularis/pull/1579)), including runtime base paths from #1575, mandatory proxy credentials on every protected request from #1576, provisioning hardening from #1578 and browser-only community welcome dismissal from #1579. The verified binary SHA-256 is `4f9cd68bfeeaa0dab0c293760c1e7a812528aa9c23f0c0e2c2489506b93d109a`. All prerequisite PRs remain unmerged during evaluation.
+The November 16 evaluation used core commit `0d2a6a098f8369653b918d1e78d7f4eeeac65d8a` ([PR #1579](https://github.com/TabularisDB/tabularis/pull/1579)), including runtime base paths from #1575, mandatory proxy credentials on every protected request from #1576, provisioning hardening from #1578 and browser-only community welcome dismissal from #1579. Its verified binary SHA-256 is `4f9cd68bfeeaa0dab0c293760c1e7a812528aa9c23f0c0e2c2489506b93d109a`. Those prerequisites were unmerged at the time of that evaluation; a maintainer merged core PRs #1573–#1579 on November 17. They are included in core `main` at `78ff5565514f1b48bbbf6ee48faf134c6bb61df4`.
 
-The final gateway deployment uses extension commit `ee39af503a15391cc299933f428ad8540a8cb0db` ([PR #12](https://github.com/TabularisDB/tabularis-plesk-extension/pull/12)), including permission rechecks during request-body uploads. Its ZIP SHA-256 is `3db149d7163cc4e2d1382657df13be0649871432b346b6b4384e695002d7b298`. [The lab report](../lab/VALIDATION.md) distinguishes this deployment from the unchanged UI capture revision.
+The November 16 final gateway deployment used extension commit `ee39af503a15391cc299933f428ad8540a8cb0db` ([PR #12](https://github.com/TabularisDB/tabularis-plesk-extension/pull/12)), including permission rechecks during request-body uploads. Its ZIP SHA-256 is `3db149d7163cc4e2d1382657df13be0649871432b346b6b4384e695002d7b298`. [The dated lab report](../lab/VALIDATION.md) distinguishes this deployment from the unchanged UI capture revision. The optional AI evaluation uses the additional pinned build in [AI configuration](ai.md), with separate [November 17 integration evidence](../lab/AI_VALIDATION.md).
 
 The provisioning contract is pinned to core [PR #1574](https://github.com/TabularisDB/tabularis/pull/1574), commit `6cbca5bcd583c4cc591880b087a3a624d103321e`, stacked on #1573 and #1528. Provisioning requests preserve the configured public Host and never send an Origin header.
 

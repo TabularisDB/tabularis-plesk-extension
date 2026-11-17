@@ -6,6 +6,19 @@ The existing Plesk session, managed connection catalogue and database credential
 continue to control access. This integration grants no global configuration,
 provider-selection, agent-tool or unrestricted administrator access.
 
+The scoped actions are available in the SQL Editor. Notebook AI retains its
+existing permissions and is not enabled by this opt-in.
+
+The AI evaluation build is core commit
+`04a24593348246794ae002b0a69ad24e0d3f1f3b` from
+[PR #1595](https://github.com/TabularisDB/tabularis/pull/1595), which remains
+unmerged. Its Linux binary SHA-256 is
+`e691dc69a596c7798833d014d76636f0c1f092b0c73dd67759836f5c25e06542`;
+the bundle SHA-256 is
+`3b8778dff66614ea73103b9c6cd0826576918cd7f8b21bca541ab19e49378343`.
+The earlier runtime prerequisites were merged separately on November 17; this
+additional AI change is not part of that earlier merge.
+
 Use a reviewed Tabularis Web build whose `web --help` advertises
 `TABULARIS_WEB_AI_CONFIG_FILE`. The installer refuses an AI opt-in against an older
 binary. The core must validate the current saved connection, database and schema
@@ -122,6 +135,8 @@ back to a core build without scoped AI support requires disabling AI first.
 Focused tests exercise disabled mode, malformed/missing configuration, source
 ownership and permissions, ZIP/provider validation, explicit schema grants,
 catalogue intersections, exact private runtime paths, keyless providers, rotation,
-cleanup and partial preparation failure. Real provider compatibility, per-request
-core denials and browser behavior must also be checked with the pinned core build
-in the Plesk lab; local filesystem tests do not establish those results.
+cleanup and partial preparation failure. The [dated AI lab report](../lab/AI_VALIDATION.md)
+records real PostgreSQL and MariaDB generation, manual execution and explanation,
+strict/legacy request denials, policy narrowing, disable cleanup and private-file
+inspection on the pinned builds. It distinguishes live observations from the
+additional rotation and core cancellation assertions covered by automated tests.
